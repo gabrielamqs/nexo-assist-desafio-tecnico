@@ -70,6 +70,14 @@ export type Chamado = {
   resolvidoEm: Date | null;
 };
 
+export type AtualizacaoDeChamado = {
+  id: string;
+  chamadoCodigo: string;
+  autor: AutorDeMensagem;
+  texto: string;
+  criadaEm: Date;
+};
+
 export type ArtigoDaCentralDeAjuda = {
   id: string;
   titulo: string;

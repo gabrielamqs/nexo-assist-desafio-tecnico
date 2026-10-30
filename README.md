@@ -20,6 +20,8 @@ npm run dev
 
 Preencha o `.env` (ao menos `GEMINI_API_KEY` e `SESSION_SECRET`). A aplicação sobe em http://localhost:3000.
 
+O banco SQLite é criado, migrado e populado com os dados de exemplo na primeira vez que a aplicação sobe — não há passo manual. Ele fica em `data/nexo-assist.db` (fora do versionamento); apagar essa pasta devolve o projeto ao estado inicial.
+
 ### Scripts
 
 | Comando                | O que faz                              |
@@ -33,3 +35,5 @@ Preencha o `.env` (ao menos `GEMINI_API_KEY` e `SESSION_SECRET`). A aplicação 
 | `npm run format:check` | Verifica a formatação sem alterar nada |
 | `npm test`             | Testes com Vitest                      |
 | `npm run test:watch`   | Testes em modo watch                   |
+| `npm run db:generate`  | Gera a migration a partir do schema    |
+| `npm run db:seed`      | Popula o banco com os dados de exemplo |

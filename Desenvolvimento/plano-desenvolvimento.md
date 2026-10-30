@@ -43,10 +43,10 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Dados de exemplo — **ver PDF, Anexo B (p.4)** para os requisitos mínimos
 
 ## Etapa 2 — Infraestrutura de dados
-- [ ] Schema Drizzle (chamados, conversas, mensagens, usuários, artigos)
-- [ ] Migrations
-- [ ] Client SQLite (local) com seed dos dados de exemplo
-- [ ] Repositório de chamados (`ticket-repository`) com simulação de indisponibilidade + retry/backoff
+- [x] Schema Drizzle (chamados, conversas, mensagens, usuários, artigos)
+- [x] Migrations
+- [x] Client SQLite (local) com seed dos dados de exemplo
+- [x] Repositório de chamados (`ticket-repository`) com simulação de indisponibilidade + retry/backoff
 
 ## Etapa 3 — Serviço de chamados via MCP
 - [ ] `MCPServer` expondo ferramentas: consultar, criar, atualizar, transferir chamado, buscar central de ajuda

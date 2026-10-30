@@ -75,10 +75,13 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   /llm                  → adapter Gemini implementando llm-provider
   /mcp                  → setup do MCPServer (expõe) e MCPClient (agent consome)
   /ticket-repo          → implementação SQLite de ticket-repository, com simulação de indisponibilidade
+  /central-de-ajuda     → busca nos artigos (ranqueamento por título/palavra-chave/conteúdo)
 
 /agent                  → definição do agent Mastra, wiring de tools via MCPClient, prompts, structured output
 
-/lib                    → utilitários compartilhados (sessão/auth, etc.)
+/lib                    → utilitários compartilhados (leitura de env, sessão/auth, etc.)
+
+/scripts                → scripts de linha de comando (seed do banco)
 
 /tests
   /domain               → testes unitários das regras puras
@@ -96,6 +99,16 @@ O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como
 - **Privacidade com exceção para o analista**: o Anexo A diz que informações de um chamado só vão para quem o abriu, mas o console do analista (Tela 4) mostra os chamados do funcionário atendido. A regra implementada é: funcionário vê só os próprios; analista vê os do funcionário em atendimento.
 - **Impacto e urgência como entrada da prioridade**: a classificação vem do protótipo, que pergunta "Quem está sendo afetado?" com as opções Só eu / Minha equipe / Toda a empresa / Não sei. Impacto desconhecido não escala para crítica.
 - **Transferência por limite de mensagens** entra junto dos gatilhos do Anexo A, já que a sessão termina em 30 mensagens e a conversa não pode simplesmente parar.
+
+## Decisões de infraestrutura (Etapa 2)
+
+- **Driver `@libsql/client`** em vez de `better-sqlite3`: a API é assíncrona (combina com route handlers do Next), aceita a URL no formato `file:` que já estava no `.env.example` e deixa uma saída pronta para Turso caso o volume do Railway dê problema. O Drizzle 0.45 não tem driver para o `node:sqlite` nativo, então a escolha era entre esses dois.
+- **Migrations rodam no startup**, pelo `instrumentation.ts` do Next, não no build — o volume do Railway só existe em runtime. O mesmo hook cria a pasta do arquivo (o libsql não cria) e roda o seed.
+- **Seed idempotente**: só insere se a tabela de usuários estiver vazia. `npm run db:seed` serve para popular manualmente; em uso normal o startup já resolve.
+- **Tabela `atualizacoes_de_chamado`** em vez de concatenar texto na descrição: a história 3 do funcionário ("complementar um chamado com novas informações") fica com histórico de verdade, com autor e data, e a descrição original não se perde.
+- **Cada atualização reinicia a contagem do prazo**, conforme o Anexo A ("o prazo vale para a primeira resposta e para cada atualização").
+- **Indisponibilidade simulada dentro do repositório** (ele *é* o sistema legado), e **retry/backoff como decorator separado** (`comTentativas`). A falha é sorteada antes de qualquer escrita, então repetir a operação não corre risco de duplicar chamado — não precisa de chave de idempotência.
+- **Busca na central de ajuda em memória**, com normalização de acentos e pontuação por título/palavra-chave/conteúdo, em vez de `LIKE` no SQL. São 9 artigos; isso dá busca sem acento e sem depender de collation do SQLite. Privilegia recall: o agent lê os artigos e decide se servem.
 
 ## Decisões de comportamento do agent
 
