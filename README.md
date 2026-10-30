@@ -22,6 +22,18 @@ Preencha o `.env` (ao menos `GEMINI_API_KEY` e `SESSION_SECRET`). A aplicação 
 
 O banco SQLite é criado, migrado e populado com os dados de exemplo na primeira vez que a aplicação sobe — não há passo manual. Ele fica em `data/nexo-assist.db` (fora do versionamento); apagar essa pasta devolve o projeto ao estado inicial.
 
+### Como entrar
+
+Qualquer senha é aceita para os usuários de exemplo. O login roteia conforme o papel:
+
+| E-mail                      | Papel       | Vai para    |
+| --------------------------- | ----------- | ----------- |
+| `ana.souza@nexo.com.br`     | Funcionária | `/chat`     |
+| `bruno.tavares@nexo.com.br` | Funcionário | `/chat`     |
+| `carla.mendes@nexo.com.br`  | Funcionária | `/chat`     |
+| `diego.ramos@nexo.com.br`   | Funcionário | `/chat`     |
+| `rafael.lima@nexo.com.br`   | Analista    | `/analista` |
+
 ### Scripts
 
 | Comando                | O que faz                              |

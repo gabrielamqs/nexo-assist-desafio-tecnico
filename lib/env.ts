@@ -13,6 +13,21 @@ export function taxaDeFalhaDoServicoDeChamados(): number {
   return Math.min(Math.max(configurada, 0), 1);
 }
 
+const SEGREDO_DE_DESENVOLVIMENTO = "nexo-assist-apenas-para-desenvolvimento";
+
+export function segredoDeSessao(): string {
+  const configurado = process.env.SESSION_SECRET;
+  if (configurado !== undefined && configurado.trim() !== "") {
+    return configurado;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET é obrigatório em produção. Veja o .env.example.",
+    );
+  }
+  return SEGREDO_DE_DESENVOLVIMENTO;
+}
+
 export function variavelObrigatoria(nome: string): string {
   const valor = process.env[nome];
   if (valor === undefined || valor.trim() === "") {

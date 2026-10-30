@@ -5,6 +5,7 @@ import { criarServidorMcp } from "./mcp/servidor";
 import { comTentativas } from "./ticket-repo/com-tentativas";
 import { criarVerificacaoDeDisponibilidade } from "./ticket-repo/indisponibilidade";
 import { criarRepositorioDeChamados } from "./ticket-repo/repositorio-sqlite";
+import { criarRepositorioDeUsuarios } from "./usuarios/repositorio-sqlite";
 
 const memoizar = <T>(criar: () => T) => {
   let instancia: T | undefined;
@@ -23,6 +24,10 @@ export const repositorioDeChamados = memoizar(() =>
 );
 
 export const centralDeAjuda = memoizar(() => criarCentralDeAjuda(banco()));
+
+export const repositorioDeUsuarios = memoizar(() =>
+  criarRepositorioDeUsuarios(banco()),
+);
 
 export const servidorMcp = memoizar(() =>
   criarServidorMcp({

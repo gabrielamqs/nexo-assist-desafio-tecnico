@@ -54,9 +54,9 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Teste manual/automatizado do server MCP isolado (sem agent)
 
 ## Etapa 4 — Auth
-- [ ] Tabela de usuários com `role`
-- [ ] Tela de login — **ver protótipo, Tela 1**
-- [ ] Sessão simples, roteamento por papel (decisão própria — PRD não detalha login do analista, ver `stack-arquitetura.md`)
+- [x] Tabela de usuários com `role`
+- [x] Tela de login — **ver protótipo, Tela 1**
+- [x] Sessão simples, roteamento por papel (decisão própria — PRD não detalha login do analista, ver `stack-arquitetura.md`)
 
 ## Etapa 5 — Agent (Mastra)
 - [ ] Configuração do agent com Gemini

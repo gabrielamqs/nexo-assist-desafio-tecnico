@@ -45,7 +45,7 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   /api
     /mcp              → MCPServer: expõe o serviço de chamados simulado como ferramentas MCP
     /chat             → endpoint de streaming do agent
-    /auth             → login/sessão
+  /login/acoes.ts     → Server Actions de entrar e sair (no lugar de /api/auth)
 
 /components           → Atomic Design
   /atoms
@@ -120,6 +120,18 @@ O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como
 - **Privacidade dentro da ferramenta, não só no repositório**: toda ferramenta de chamado recebe o `funcionarioId` (que vem da sessão, não do que a pessoa digita) e confere o dono antes de responder. Chamado de outra pessoa e chamado inexistente devolvem **a mesma mensagem**, para não confirmar que o chamado dos outros existe. Há teste comparando as duas respostas.
 - **O cliente MCP prefixa os nomes** com a chave do servidor: a ferramenta chega ao agent como `chamados_consultar_chamados`. Importa na Etapa 5.
 - **O rascunho continua fora do MCP**: `criar_chamado` só é chamada depois da confirmação do funcionário, e isso está escrito na descrição da ferramenta — a confirmação em si é da UI e do agent.
+
+## Decisões de autenticação e interface (Etapa 4)
+
+- **Server Actions no lugar de `/api/auth`**: entrar e sair são duas funções com `"use server"`, sem endpoint nem `fetch` no cliente. Detalhe que custou um build quebrado: um arquivo `"use server"` só pode exportar funções async, então o estado inicial do formulário mora em `app/login/estado.ts`.
+- **Sessão em cookie assinado com HMAC-SHA256**, sem biblioteca: `httpOnly`, `sameSite=lax`, `secure` em produção, expiração de 7 dias dentro do payload assinado e comparação de assinatura em tempo constante. São ~50 linhas, testadas contra adulteração, segredo trocado e expiração. Num sistema real eu usaria uma biblioteca de sessão; aqui o ganho é não ter dependência para algo pequeno e verificável.
+- **`SESSION_SECRET` é obrigatório em produção** e cai num segredo fixo apenas em desenvolvimento, para `npm run dev` funcionar sem `.env`.
+- **"Manter conectado" é funcional**: marcado grava cookie persistente de 7 dias, desmarcado grava cookie de sessão. Não é enfeite de protótipo.
+- **Qualquer senha é aceita**, como o PRD pede. O campo é exigido (vazio dá erro) mas não verificado, e isso está dito na própria tela e num comentário no caso de uso.
+- **Guarda por papel em cada página** (`exigirUsuario`), não em middleware: o middleware roda no edge e precisaria de outra implementação de verificação, e a guarda no servidor já cobre todas as rotas protegidas.
+- **`export const instant = false`** nas rotas que leem cookie: com `cacheComponents` ligado, acesso a dado de requisição fora de `<Suspense>` quebra o build. Essas telas decidem redirecionar antes de renderizar, então não há casca para mostrar — rota bloqueante é o certo. Pelo mesmo motivo, `sessaoAtual` chama `connection()` antes de ler o cookie.
+- **Tokens de design em `app/globals.css`** (`@theme` do Tailwind v4), com as fontes do protótipo: Newsreader nos títulos, Schibsted Grotesk no texto, ícones Lucide. As cores de prioridade já entram aqui para as próximas telas.
+- **Campo de e-mail controlado**: o React reseta o formulário depois de uma Server Action, o que apagava o e-mail digitado quando o login falhava.
 
 ## Decisões de comportamento do agent
 
