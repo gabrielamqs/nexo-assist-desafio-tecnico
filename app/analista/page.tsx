@@ -16,7 +16,7 @@ export default async function PaginaDoAnalista() {
         </div>
       </header>
 
-      <section className="space-y-2 rounded-2xl border border-borda bg-papel p-8">
+      <section className="space-y-2 rounded-2xl border border-borda bg-superficie p-8">
         <h1 className="font-serif text-2xl">Console do analista</h1>
         <p className="text-sm text-tinta-media">
           A lista de conversas e o painel de chamados entram aqui na Etapa 8.

@@ -11,7 +11,7 @@ export function TelaDividida({ apresentacao, children }: Props) {
       <section className="hidden lg:block lg:overflow-y-auto">
         {apresentacao}
       </section>
-      <section className="flex flex-col bg-papel lg:overflow-y-auto">
+      <section className="flex flex-col bg-superficie lg:overflow-y-auto">
         {children}
       </section>
     </main>

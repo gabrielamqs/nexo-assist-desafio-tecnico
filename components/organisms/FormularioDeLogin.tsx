@@ -56,7 +56,7 @@ export function FormularioDeLogin({
               type="button"
               onClick={() => setSenhaVisivel((visivel) => !visivel)}
               aria-label={senhaVisivel ? "Ocultar senha" : "Mostrar senha"}
-              className="rounded p-1.5 text-tinta-fraca hover:text-tinta-media focus-visible:outline-2 focus-visible:outline-azul"
+              className="rounded p-1.5 text-tinta-fraca hover:text-tinta-media focus-visible:outline-2 focus-visible:outline-primario"
             >
               {senhaVisivel ? (
                 <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -73,7 +73,7 @@ export function FormularioDeLogin({
           type="checkbox"
           name="manterConectado"
           defaultChecked
-          className="h-4 w-4 rounded border-borda text-azul focus-visible:outline-2 focus-visible:outline-azul"
+          className="h-4 w-4 rounded border-borda text-primario focus-visible:outline-2 focus-visible:outline-primario"
         />
         Manter conectado neste computador
       </label>

@@ -14,7 +14,7 @@ const iniciais = (nome: string) =>
 export function CartaoDoUsuario({ usuario }: { usuario: Usuario }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-azul-claro text-xs font-semibold text-azul">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primario-suave text-xs font-semibold text-primario">
         {iniciais(usuario.nome)}
       </span>
       <div className="min-w-0 flex-1">

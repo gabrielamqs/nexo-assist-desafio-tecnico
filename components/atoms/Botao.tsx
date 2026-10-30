@@ -7,11 +7,11 @@ type Props = ComponentProps<"button"> & {
 
 const POR_VARIANTE = {
   primario:
-    "bg-azul text-white hover:bg-azul-escuro focus-visible:outline-azul disabled:bg-azul/50",
+    "bg-primario text-tinta-invertida hover:bg-primario-escuro focus-visible:outline-primario disabled:bg-primario/50",
   secundario:
-    "border border-borda bg-papel text-tinta hover:bg-fundo focus-visible:outline-azul",
+    "border border-borda bg-superficie text-tinta hover:bg-superficie-baixa focus-visible:outline-primario",
   fantasma:
-    "text-tinta-media hover:bg-fundo hover:text-tinta focus-visible:outline-azul",
+    "text-tinta-media hover:bg-superficie-baixa hover:text-tinta focus-visible:outline-primario",
 } as const;
 
 export function Botao({

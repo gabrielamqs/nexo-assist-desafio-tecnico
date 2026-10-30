@@ -16,7 +16,7 @@ export default async function PaginaDoChat() {
         </div>
       </header>
 
-      <section className="space-y-2 rounded-2xl border border-borda bg-papel p-8">
+      <section className="space-y-2 rounded-2xl border border-borda bg-superficie p-8">
         <h1 className="font-serif text-2xl">Olá, {funcionario.nome}.</h1>
         <p className="text-sm text-tinta-media">
           O chat com o Nexo Assist entra aqui na próxima etapa.

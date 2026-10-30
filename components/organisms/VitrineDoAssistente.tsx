@@ -11,7 +11,7 @@ const ACOES_DO_EXEMPLO = ["consultou seus chamados", "criou um chamado"];
 
 export function VitrineDoAssistente() {
   return (
-    <div className="flex h-full min-h-fit flex-col justify-between gap-6 bg-marinho px-8 py-7 text-white xl:px-12 xl:py-10">
+    <div className="flex h-full min-h-fit flex-col justify-between gap-6 bg-superficie-escura px-8 py-7 text-tinta-invertida xl:px-12 xl:py-10">
       <MarcaNexoAssist tom="claro" />
 
       <div className="space-y-5">
@@ -26,13 +26,15 @@ export function VitrineDoAssistente() {
           busca na central de ajuda e chama um analista quando precisa.
         </p>
 
-        <div className="max-w-md space-y-3 rounded-2xl border border-marinho-borda bg-marinho-claro p-4">
-          <p className="ml-auto w-fit rounded-2xl rounded-br-sm bg-white px-3 py-2 text-sm text-tinta">
+        <div className="max-w-md space-y-3 rounded-2xl border border-borda-escura bg-superficie-escura-alta p-4">
+          <p className="ml-auto w-fit rounded-2xl rounded-br-sm bg-superficie px-3 py-2 text-sm text-tinta">
             Meu notebook não conecta na VPN. Erro 809.
           </p>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tinta-fraca">
-            <span className="font-medium text-white">Nexo Assist</span>
+            <span className="font-medium text-tinta-invertida">
+              Nexo Assist
+            </span>
             {ACOES_DO_EXEMPLO.map((acao) => (
               <span key={acao} className="inline-flex items-center gap-1">
                 <Check className="h-3 w-3 text-resolvido" aria-hidden="true" />
@@ -41,7 +43,7 @@ export function VitrineDoAssistente() {
             ))}
           </div>
 
-          <p className="w-fit rounded-2xl rounded-bl-sm bg-marinho px-3 py-2 text-sm">
+          <p className="w-fit rounded-2xl rounded-bl-sm bg-superficie-escura px-3 py-2 text-sm">
             Pronto: abri o chamado com prioridade alta. Um analista fala com
             você em até 4 h úteis.
           </p>
@@ -53,7 +55,7 @@ export function VitrineDoAssistente() {
         </div>
       </div>
 
-      <dl className="grid grid-cols-3 gap-4 border-t border-marinho-borda pt-5">
+      <dl className="grid grid-cols-3 gap-4 border-t border-borda-escura pt-5">
         {NUMEROS.map(({ valor, legenda }) => (
           <div key={legenda}>
             <dt className="font-serif text-2xl">{valor}</dt>

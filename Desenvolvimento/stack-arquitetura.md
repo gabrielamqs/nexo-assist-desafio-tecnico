@@ -130,8 +130,26 @@ O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como
 - **Qualquer senha é aceita**, como o PRD pede. O campo é exigido (vazio dá erro) mas não verificado, e isso está dito na própria tela e num comentário no caso de uso.
 - **Guarda por papel em cada página** (`exigirUsuario`), não em middleware: o middleware roda no edge e precisaria de outra implementação de verificação, e a guarda no servidor já cobre todas as rotas protegidas.
 - **`export const instant = false`** nas rotas que leem cookie: com `cacheComponents` ligado, acesso a dado de requisição fora de `<Suspense>` quebra o build. Essas telas decidem redirecionar antes de renderizar, então não há casca para mostrar — rota bloqueante é o certo. Pelo mesmo motivo, `sessaoAtual` chama `connection()` antes de ler o cookie.
-- **Tokens de design em `app/globals.css`** (`@theme` do Tailwind v4), com as fontes do protótipo: Newsreader nos títulos, Schibsted Grotesk no texto, ícones Lucide. As cores de prioridade já entram aqui para as próximas telas.
+- **Tokens de design em `app/globals.css`** (`@theme` do Tailwind v4), com as fontes do protótipo: Newsreader nos títulos, Schibsted Grotesk no texto, ícones Lucide.
 - **Campo de e-mail controlado**: o React reseta o formulário depois de uma Server Action, o que apagava o e-mail digitado quando o login falhava.
+
+## Convenção de estilo
+
+Regra: **nenhuma cor literal fora de `app/globals.css`**. Nada de hex, nada de cor da paleta padrão do Tailwind (`blue-600`, `slate-500`), nada de `text-white`. Só token.
+
+Os nomes dizem a **função**, não a cor, para que trocar a identidade visual seja mexer em valores num lugar só, sem renomear nada no código:
+
+| Grupo      | Tokens                                                                               |
+| ---------- | ------------------------------------------------------------------------------------ |
+| Ação       | `primario`, `primario-escuro`, `primario-suave`                                        |
+| Superfície | `superficie`, `superficie-baixa`, `superficie-escura`, `superficie-escura-alta`        |
+| Texto      | `tinta`, `tinta-media`, `tinta-fraca`, `tinta-invertida`                               |
+| Borda      | `borda`, `borda-escura`                                                                |
+| Domínio    | `critica`, `alta`, `media`, `baixa`, `resolvido`                                       |
+
+Transparência se resolve com o modificador do Tailwind sobre o token (`bg-critica/5`), nunca com uma nova cor.
+
+**Token resolve cor, não resolve combinação repetida.** Os selos de prioridade e status vão aparecer no chat, no card de chamado, na lista do analista e no painel lateral, sempre como o mesmo trio de fundo, borda e texto. Isso vira um átomo `Selo` na Etapa 6, que recebe a prioridade ou o status e decide as classes — um lugar só define como "prioridade alta" se parece.
 
 ## Decisões de comportamento do agent
 
