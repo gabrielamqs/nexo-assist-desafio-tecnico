@@ -37,10 +37,10 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] README inicial (placeholder, seção "como rodar")
 
 ## Etapa 1 — Domínio e dados de exemplo
-- [ ] Tipos de domínio (Chamado, Conversa, Funcionário, Artigo)
-- [ ] Regras puras de negócio — **ver PDF, Anexo A (p.4)** para tipos, categorias, prioridade/prazo, duplicidade e validação de abertura exatos; não reimplementar de memória
-- [ ] Testes unitários das regras (Vitest)
-- [ ] Dados de exemplo — **ver PDF, Anexo B (p.4)** para os requisitos mínimos
+- [x] Tipos de domínio (Chamado, Conversa, Funcionário, Artigo)
+- [x] Regras puras de negócio — **ver PDF, Anexo A (p.4)** para tipos, categorias, prioridade/prazo, duplicidade e validação de abertura exatos; não reimplementar de memória
+- [x] Testes unitários das regras (Vitest)
+- [x] Dados de exemplo — **ver PDF, Anexo B (p.4)** para os requisitos mínimos
 
 ## Etapa 2 — Infraestrutura de dados
 - [ ] Schema Drizzle (chamados, conversas, mensagens, usuários, artigos)

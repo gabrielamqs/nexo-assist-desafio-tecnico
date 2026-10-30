@@ -53,9 +53,12 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   /organisms
   /templates
 
-/domain                → regras puras do Anexo A (prioridade, prazo, duplicidade, validação)
-  ticket-rules.ts
-  types.ts
+/domain                → regras puras do Anexo A
+  types.ts              (tipos e constantes: tipo, categoria, prioridade, status, limites)
+  prazos.ts             (horário útil, prazo por prioridade, chamado vencido)
+  prioridade.ts         (impacto + urgência → prioridade)
+  chamados.ts           (validação de abertura, duplicidade/reabertura, privacidade)
+  transferencia.ts      (gatilhos de transferência para analista)
 
 /application            → casos de uso, orquestram domain + ports
   usecases/
@@ -68,7 +71,7 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
     ticket-repository.ts (interface)
 
 /infrastructure
-  /db                   → schema Drizzle, migrations, client SQLite
+  /db                   → schema Drizzle, migrations, client SQLite, dados-exemplo.ts (Anexo B)
   /llm                  → adapter Gemini implementando llm-provider
   /mcp                  → setup do MCPServer (expõe) e MCPClient (agent consome)
   /ticket-repo          → implementação SQLite de ticket-repository, com simulação de indisponibilidade
@@ -81,6 +84,18 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   /domain               → testes unitários das regras puras
   /eval                 → conjunto de casos para avaliar decisões do agent
 ```
+
+## Decisões do domínio (lacunas do Anexo A preenchidas na Etapa 1)
+
+O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como contar "horas úteis". Decisões tomadas:
+
+- **Expediente**: segunda a sexta, 8h às 18h — veio do próprio artigo da central de ajuda citado como exemplo no Anexo B ("Horário do service desk"). Logo, 1 dia útil = 10 horas úteis.
+- **Crítica conta em hora corrida**, não útil: o mesmo artigo diz que chamados críticos têm plantão 24 horas, então o prazo de 1 hora não pode esperar o expediente abrir. As outras prioridades contam em horas úteis.
+- **Feriados não são modelados** — só fim de semana. Um calendário de feriados seria o próximo passo natural, mas não muda a forma da função.
+- **Fuso fixo em −03:00** em vez de biblioteca de timezone: o Brasil não adota horário de verão desde 2019, então o offset de São Paulo é constante. Evita uma dependência para ~20 linhas de aritmética.
+- **Privacidade com exceção para o analista**: o Anexo A diz que informações de um chamado só vão para quem o abriu, mas o console do analista (Tela 4) mostra os chamados do funcionário atendido. A regra implementada é: funcionário vê só os próprios; analista vê os do funcionário em atendimento.
+- **Impacto e urgência como entrada da prioridade**: a classificação vem do protótipo, que pergunta "Quem está sendo afetado?" com as opções Só eu / Minha equipe / Toda a empresa / Não sei. Impacto desconhecido não escala para crítica.
+- **Transferência por limite de mensagens** entra junto dos gatilhos do Anexo A, já que a sessão termina em 30 mensagens e a conversa não pode simplesmente parar.
 
 ## Decisões de comportamento do agent
 
