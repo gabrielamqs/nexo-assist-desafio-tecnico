@@ -49,9 +49,9 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Repositório de chamados (`ticket-repository`) com simulação de indisponibilidade + retry/backoff
 
 ## Etapa 3 — Serviço de chamados via MCP
-- [ ] `MCPServer` expondo ferramentas: consultar, criar, atualizar, transferir chamado, buscar central de ajuda
-- [ ] Endpoint `/api/mcp`
-- [ ] Teste manual/automatizado do server MCP isolado (sem agent)
+- [x] `MCPServer` expondo ferramentas: consultar, criar, atualizar, transferir chamado, buscar central de ajuda
+- [x] Endpoint `/api/mcp`
+- [x] Teste manual/automatizado do server MCP isolado (sem agent)
 
 ## Etapa 4 — Auth
 - [ ] Tabela de usuários com `role`

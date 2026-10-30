@@ -73,7 +73,8 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
 /infrastructure
   /db                   → schema Drizzle, migrations, client SQLite, dados-exemplo.ts (Anexo B)
   /llm                  → adapter Gemini implementando llm-provider
-  /mcp                  → setup do MCPServer (expõe) e MCPClient (agent consome)
+  /mcp                  → MCPServer e as ferramentas expostas ao agent
+  dependencias.ts       → composição de produção (banco → repositórios → servidor MCP)
   /ticket-repo          → implementação SQLite de ticket-repository, com simulação de indisponibilidade
   /central-de-ajuda     → busca nos artigos (ranqueamento por título/palavra-chave/conteúdo)
 
@@ -109,6 +110,16 @@ O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como
 - **Cada atualização reinicia a contagem do prazo**, conforme o Anexo A ("o prazo vale para a primeira resposta e para cada atualização").
 - **Indisponibilidade simulada dentro do repositório** (ele *é* o sistema legado), e **retry/backoff como decorator separado** (`comTentativas`). A falha é sorteada antes de qualquer escrita, então repetir a operação não corre risco de duplicar chamado — não precisa de chave de idempotência.
 - **Busca na central de ajuda em memória**, com normalização de acentos e pontuação por título/palavra-chave/conteúdo, em vez de `LIKE` no SQL. São 9 artigos; isso dá busca sem acento e sem depender de collation do SQLite. Privilegia recall: o agent lê os artigos e decide se servem.
+
+## Decisões do MCP (Etapa 3)
+
+- **Seis ferramentas**: `consultar_chamados`, `consultar_chamado`, `criar_chamado`, `atualizar_chamado`, `transferir_chamado` e `buscar_central_ajuda`. O nome exposto vem da **chave do objeto** passado em `tools`, não do `id` do `createTool` — detalhe que custou uma depuração.
+- **Adaptador `fetch-to-node` na rota**: `MCPServer.startHTTP` recebe `req`/`res` do Node, e route handler do App Router trabalha com `Request`/`Response` da Web. A própria documentação do `@mastra/mcp` indica esse adaptador para runtimes baseados em fetch.
+- **Sem `export const runtime`** na rota: é incompatível com `cacheComponents`, que está ligado. Node já é o padrão.
+- **Revisão 2026-07-28 do protocolo, que é stateless**: cada requisição se basta, sem `initialize` nem sessão guardada entre chamadas. É o que permite servir MCP de dentro de um route handler.
+- **Privacidade dentro da ferramenta, não só no repositório**: toda ferramenta de chamado recebe o `funcionarioId` (que vem da sessão, não do que a pessoa digita) e confere o dono antes de responder. Chamado de outra pessoa e chamado inexistente devolvem **a mesma mensagem**, para não confirmar que o chamado dos outros existe. Há teste comparando as duas respostas.
+- **O cliente MCP prefixa os nomes** com a chave do servidor: a ferramenta chega ao agent como `chamados_consultar_chamados`. Importa na Etapa 5.
+- **O rascunho continua fora do MCP**: `criar_chamado` só é chamada depois da confirmação do funcionário, e isso está escrito na descrição da ferramenta — a confirmação em si é da UI e do agent.
 
 ## Decisões de comportamento do agent
 
