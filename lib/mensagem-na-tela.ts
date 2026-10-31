@@ -37,6 +37,7 @@ export type EventoDoChat =
       mensagemDoFuncionario: MensagemNaTela;
       resposta: MensagemNaTela;
       mensagensEnviadas: number;
+      transferencia: MensagemNaTela | null;
     }
   | {
       tipo: "com_analista";

@@ -12,7 +12,8 @@ import { USUARIOS_DE_EXEMPLO } from "@/infrastructure/db/dados-exemplo";
 import { conversas as tabelaDeConversas } from "@/infrastructure/db/schema";
 import type { BancoDeDados } from "@/infrastructure/db/client";
 import { criarRepositorioDeConversas } from "@/infrastructure/conversas/repositorio-sqlite";
-import { criarBancoDeTeste } from "../infrastructure/banco-de-teste";
+import type { RepositorioDeChamados } from "@/application/ports/ticket-repository";
+import { criarServicoEmMemoria } from "../agent/servico-em-memoria";
 import { criarAssistenteFalso } from "./assistente-falso";
 
 const AGORA = new Date("2026-03-09T10:00:00-03:00");
@@ -29,9 +30,12 @@ const rascunhoCritico = {
 
 let banco: BancoDeDados;
 let conversas: RepositorioDeConversas;
+let chamados: RepositorioDeChamados;
 
 beforeEach(async () => {
-  banco = await criarBancoDeTeste();
+  const servico = await criarServicoEmMemoria(AGORA);
+  banco = servico.banco;
+  chamados = servico.repositorioDeChamados;
   conversas = criarRepositorioDeConversas({ banco, agora: () => AGORA });
 });
 
@@ -51,7 +55,7 @@ describe("responderMensagem", () => {
     });
 
     const resultado = await responderMensagem(
-      { conversas, assistente, agora: () => AGORA },
+      { conversas, chamados, assistente, agora: () => AGORA },
       { funcionario: ana, texto: "  Como uso a VPN?  " },
     );
 
@@ -77,7 +81,12 @@ describe("responderMensagem", () => {
 
   it("continua a mesma conversa e passa o histórico ao assistente", async () => {
     const { assistente, recebidas } = criarAssistenteFalso();
-    const dependencias = { conversas, assistente, agora: () => AGORA };
+    const dependencias = {
+      conversas,
+      chamados,
+      assistente,
+      agora: () => AGORA,
+    };
 
     await responderMensagem(dependencias, { funcionario: ana, texto: "Oi" });
     await responderMensagem(dependencias, {
@@ -112,7 +121,7 @@ describe("responderMensagem", () => {
     });
 
     const resultado = await responderMensagem(
-      { conversas, assistente, agora: () => AGORA },
+      { conversas, chamados, assistente, agora: () => AGORA },
       { funcionario: ana, texto: "A VPN parou" },
     );
 
@@ -139,7 +148,7 @@ describe("responderMensagem", () => {
     });
 
     const resultado = await responderMensagem(
-      { conversas, assistente, agora: () => AGORA },
+      { conversas, chamados, assistente, agora: () => AGORA },
       { funcionario: ana, texto: "O sistema de notas caiu para todo mundo" },
     );
 
@@ -153,7 +162,7 @@ describe("responderMensagem", () => {
     const { assistente } = criarAssistenteFalso({ confianca: 0.41 });
 
     const resultado = await responderMensagem(
-      { conversas, assistente, agora: () => AGORA },
+      { conversas, chamados, assistente, agora: () => AGORA },
       { funcionario: ana, texto: "Aquela coisa do sistema, sabe?" },
     );
 
@@ -169,7 +178,7 @@ describe("responderMensagem", () => {
     await banco.update(tabelaDeConversas).set({ estado: "com_analista" });
 
     const resultado = await responderMensagem(
-      { conversas, assistente, agora: () => AGORA },
+      { conversas, chamados, assistente, agora: () => AGORA },
       { funcionario: ana, texto: "Alguém aí?" },
     );
 
@@ -183,7 +192,7 @@ describe("responderMensagem", () => {
 
     await expect(
       responderMensagem(
-        { conversas, assistente, agora: () => AGORA },
+        { conversas, chamados, assistente, agora: () => AGORA },
         { funcionario: ana, texto: "Oi" },
       ),
     ).rejects.toBeInstanceOf(AssistenteIndisponivelError);
@@ -197,7 +206,7 @@ describe("responderMensagem", () => {
 
     await expect(
       responderMensagem(
-        { conversas, assistente, agora: () => AGORA },
+        { conversas, chamados, assistente, agora: () => AGORA },
         { funcionario: ana, texto: "   " },
       ),
     ).rejects.toBeInstanceOf(MensagemVaziaError);
@@ -205,7 +214,12 @@ describe("responderMensagem", () => {
 
   it("bloqueia no servidor a mensagem acima do limite, sem chamar o modelo", async () => {
     const { assistente, recebidas } = criarAssistenteFalso();
-    const dependencias = { conversas, assistente, agora: () => AGORA };
+    const dependencias = {
+      conversas,
+      chamados,
+      assistente,
+      agora: () => AGORA,
+    };
 
     for (
       let enviada = 0;
@@ -223,7 +237,12 @@ describe("responderMensagem", () => {
 
   it("recomenda transferir na última mensagem permitida", async () => {
     const { assistente } = criarAssistenteFalso();
-    const dependencias = { conversas, assistente, agora: () => AGORA };
+    const dependencias = {
+      conversas,
+      chamados,
+      assistente,
+      agora: () => AGORA,
+    };
 
     const respostas = [];
     for (
@@ -244,6 +263,121 @@ describe("responderMensagem", () => {
       ultima?.situacao === "respondida" &&
         ultima.resposta.decisao?.transferencia,
     ).toEqual({ recomendada: true, motivo: "limite_de_mensagens" });
+    expect(ultima?.conversa.estado).toBe("aguardando_analista");
+  });
+
+  it("transfere na hora quando o funcionário pede um analista", async () => {
+    const { assistente } = criarAssistenteFalso({
+      intencao: "falar_com_analista",
+      chamadasDeFerramenta: [
+        {
+          ferramenta: "chamar_analista",
+          entrada: {},
+          saida: {
+            resumo: "A pessoa pediu para falar com alguém sobre a VPN.",
+          },
+          sucesso: true,
+        },
+      ],
+    });
+
+    const resultado = await responderMensagem(
+      { conversas, chamados, assistente, agora: () => AGORA },
+      { funcionario: ana, texto: "Quero falar com um analista" },
+    );
+
+    expect(
+      resultado.situacao === "respondida" && resultado.transferencia,
+    ).toMatchObject({ motivo: "pedido_do_funcionario" });
+    expect(resultado.conversa.estado).toBe("aguardando_analista");
+    await expect(
+      conversas.buscarPorId(resultado.conversa.id),
+    ).resolves.toMatchObject({
+      resumoParaAnalista: "A pessoa pediu para falar com alguém sobre a VPN.",
+    });
+  });
+
+  it("monta um resumo a partir da decisão quando o agent não escreve um", async () => {
+    const { assistente } = criarAssistenteFalso({
+      intencao: "falar_com_analista",
+      entendimento: "A pessoa quer falar com uma pessoa sobre a impressora.",
+    });
+
+    const resultado = await responderMensagem(
+      { conversas, chamados, assistente, agora: () => AGORA },
+      { funcionario: ana, texto: "Me passa para um humano" },
+    );
+
+    await expect(
+      conversas.buscarPorId(resultado.conversa.id),
+    ).resolves.toMatchObject({
+      resumoParaAnalista:
+        "A pessoa quer falar com uma pessoa sobre a impressora. Transferido porque a pessoa pediu um analista.",
+    });
+  });
+
+  it("apenas oferece o analista quando o chamado está vencido", async () => {
+    const { assistente } = criarAssistenteFalso({
+      intencao: "consultar_chamado",
+      chamadasDeFerramenta: [
+        {
+          ferramenta: "consultar_chamado",
+          entrada: { codigo: "INC-20311" },
+          saida: {
+            codigo: "INC-20311",
+            tipo: "incidente",
+            titulo: "Notebook lento",
+            descricao: "Lentidão desde a atualização.",
+            categoria: "Hardware",
+            prioridade: "media",
+            status: "aguardando_analista",
+            abertoEm: AGORA.toISOString(),
+            atualizadoEm: AGORA.toISOString(),
+            prazoDeResposta: AGORA.toISOString(),
+            vencido: true,
+          },
+          sucesso: true,
+        },
+      ],
+    });
+
+    const resultado = await responderMensagem(
+      { conversas, chamados, assistente, agora: () => AGORA },
+      { funcionario: ana, texto: "Como está meu chamado?" },
+    );
+
+    expect(
+      resultado.situacao === "respondida" && resultado.transferencia,
+    ).toBeNull();
+    expect(resultado.conversa.estado).toBe("com_agent");
+    expect(
+      resultado.situacao === "respondida" &&
+        resultado.resposta.decisao?.transferencia,
+    ).toEqual({ recomendada: true, motivo: "chamado_vencido" });
+  });
+
+  it("não chama o agent depois de a conversa ir para um analista", async () => {
+    const { assistente, recebidas } = criarAssistenteFalso({
+      intencao: "falar_com_analista",
+    });
+    const dependencias = {
+      conversas,
+      chamados,
+      assistente,
+      agora: () => AGORA,
+    };
+
+    await responderMensagem(dependencias, {
+      funcionario: ana,
+      texto: "Quero um analista",
+    });
+    const depois = await responderMensagem(dependencias, {
+      funcionario: ana,
+      texto: "Alguém aí?",
+    });
+
+    expect(depois.situacao).toBe("com_analista");
+    expect(recebidas).toHaveLength(1);
   });
 });
 
@@ -259,7 +393,7 @@ describe("carregarConversa", () => {
   it("devolve o histórico para continuar de onde parou", async () => {
     const { assistente } = criarAssistenteFalso();
     await responderMensagem(
-      { conversas, assistente, agora: () => AGORA },
+      { conversas, chamados, assistente, agora: () => AGORA },
       { funcionario: ana, texto: "Oi" },
     );
 

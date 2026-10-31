@@ -6,6 +6,7 @@ import type { ResultadoDaAcaoNoRascunho } from "@/app/chat/tipos";
 import { Aviso } from "@/components/atoms/Aviso";
 import { BolhaDoFuncionario } from "@/components/molecules/BolhaDoFuncionario";
 import { Compositor } from "@/components/molecules/Compositor";
+import { MarcoDaConversa } from "@/components/molecules/MarcoDaConversa";
 import {
   LIMITE_DE_MENSAGENS_POR_SESSAO,
   MENSAGENS_PARA_AVISAR_DO_LIMITE,
@@ -131,8 +132,10 @@ export function ConversaComAssistente({
                 evento.mensagemDoFuncionario,
               ),
               evento.resposta,
+              ...(evento.transferencia === null ? [] : [evento.transferencia]),
             ]);
             setEnviadas(evento.mensagensEnviadas);
+            if (evento.transferencia !== null) setComAnalista(true);
             break;
           case "com_analista":
             setMensagens((atuais) =>
@@ -221,12 +224,11 @@ export function ConversaComAssistente({
                 );
               case "sistema":
                 return (
-                  <p
+                  <MarcoDaConversa
                     key={mensagem.id}
-                    className="text-center text-xs text-tinta-fraca"
-                  >
-                    {mensagem.conteudo}
-                  </p>
+                    texto={mensagem.conteudo}
+                    criadaEm={mensagem.criadaEm}
+                  />
                 );
               case "agent":
                 return (

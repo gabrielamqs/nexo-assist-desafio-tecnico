@@ -187,6 +187,22 @@ export function criarFerramentasDoAssistente({
       ),
   });
 
+  const chamarAnalista = createTool({
+    id: FERRAMENTA.chamarAnalista,
+    description:
+      "Escreve o resumo do caso para o analista. Use quando a pessoa pedir uma pessoa, em caso crítico ou quando você não tiver segurança sobre o que fazer. Quem decide se a conversa vai mesmo para um analista são as regras do service desk; esta ferramenta só registra o resumo que o analista vai ler.",
+    inputSchema: z.object({
+      resumo: z
+        .string()
+        .min(1)
+        .describe(
+          "O caso em poucas frases, para o analista não precisar perguntar tudo de novo: o que a pessoa relatou, o que já foi verificado e o que falta decidir. Cite os códigos de chamado envolvidos.",
+        ),
+    }),
+    execute: async ({ resumo }) =>
+      executar(FERRAMENTA.chamarAnalista, { resumo }, async () => ({ resumo })),
+  });
+
   const buscarCentralDeAjuda = createTool({
     id: FERRAMENTA.buscarCentralDeAjuda,
     description:
@@ -283,5 +299,6 @@ export function criarFerramentasDoAssistente({
     [FERRAMENTA.buscarCentralDeAjuda]: buscarCentralDeAjuda,
     [FERRAMENTA.proporChamado]: proporChamado,
     [FERRAMENTA.proporAtualizacao]: proporAtualizacao,
+    [FERRAMENTA.chamarAnalista]: chamarAnalista,
   };
 }

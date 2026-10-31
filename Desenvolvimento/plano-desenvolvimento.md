@@ -75,9 +75,9 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Painel de transparência — requisito "Visibilidade das decisões", PRD p.2 ("a parte mais importante do desafio"); formato (expandir ações / painel lateral / log) é decisão própria
 
 ## Etapa 7 — Transferência para analista
-- [ ] Condições de transferência — **ver PDF, Anexo A, item "Transferência" (p.4)** para os gatilhos obrigatórios; limiar de confiança como fallback é decisão própria
-- [ ] Estado da conversa (com agent / com analista) persistido
-- [ ] Agent pausado durante atendimento humano (regra explícita do Anexo A)
+- [x] Condições de transferência — **ver PDF, Anexo A, item "Transferência" (p.4)** para os gatilhos obrigatórios; limiar de confiança como fallback é decisão própria
+- [x] Estado da conversa (com agent / com analista) persistido
+- [x] Agent pausado durante atendimento humano (regra explícita do Anexo A)
 
 ## Etapa 8 — Console do analista (UI)
 - [ ] Telas 4 e 5 — **ver protótipo** para layout; comportamento esperado descrito no PRD, histórias do analista (p.1) e "O que construir" item 6 (p.2)
@@ -92,7 +92,7 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 ## Etapa 10 — Estados de carregamento/erro e polimento
 - [ ] Loading states (streaming, busca de chamados, indisponibilidade simulada)
 - [ ] Tratamento de erro visível na UI ("tentando novamente")
-- [ ] Revisão de fidelidade ao protótipo (Anexo C)
+- [ ] Revisão de fidelidade ao protótipo (Anexo C). Pendências já vistas: separador de data ("Hoje") entre mensagens de dias diferentes no chat
 
 ## Etapa 11 — README final
 - [ ] Como rodar

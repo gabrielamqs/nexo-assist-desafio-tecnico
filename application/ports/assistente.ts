@@ -11,6 +11,7 @@ export const FERRAMENTAS_DO_ASSISTENTE = {
   buscarCentralDeAjuda: "buscar_central_ajuda",
   proporChamado: "propor_chamado",
   proporAtualizacao: "propor_atualizacao",
+  chamarAnalista: "chamar_analista",
 } as const;
 
 export type NomeDaFerramentaDoAssistente =

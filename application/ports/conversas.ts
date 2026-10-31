@@ -19,4 +19,5 @@ export type RepositorioDeConversas = {
   buscarMensagem(id: string): Promise<Mensagem | null>;
   adicionarMensagem(dados: NovaMensagem): Promise<Mensagem>;
   atualizarDecisao(mensagemId: string, decisao: DecisaoDoAgent): Promise<void>;
+  transferirParaAnalista(conversaId: string, resumo: string): Promise<Conversa>;
 };

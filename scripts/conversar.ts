@@ -96,7 +96,11 @@ async function main() {
 
     const inicio = Date.now();
     const resultado = await responderMensagem(
-      { conversas: repositorioDeConversas(), assistente: assistente() },
+      {
+        conversas: repositorioDeConversas(),
+        chamados: repositorioDeChamados(),
+        assistente: assistente(),
+      },
       { funcionario, texto },
       {
         aoUsarFerramenta: (chamada) =>

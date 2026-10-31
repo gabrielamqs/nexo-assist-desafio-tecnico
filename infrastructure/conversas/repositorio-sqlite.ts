@@ -102,6 +102,24 @@ export function criarRepositorioDeConversas({
       return nova;
     },
 
+    async transferirParaAnalista(conversaId, resumo) {
+      const momento = agora();
+      const [conversa] = await banco
+        .update(conversas)
+        .set({
+          estado: "aguardando_analista",
+          resumoParaAnalista: resumo,
+          atualizadaEm: momento,
+        })
+        .where(eq(conversas.id, conversaId))
+        .returning();
+
+      if (conversa === undefined) {
+        throw new Error(`Conversa ${conversaId} não encontrada.`);
+      }
+      return conversa;
+    },
+
     async atualizarDecisao(mensagemId, decisao) {
       await banco
         .update(mensagens)

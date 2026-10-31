@@ -95,6 +95,7 @@ const TIPO_DA_ACAO_POR_FERRAMENTA: Record<
   [FERRAMENTA.buscarCentralDeAjuda]: "buscou_central_ajuda",
   [FERRAMENTA.proporChamado]: "montou_rascunho",
   [FERRAMENTA.proporAtualizacao]: "montou_rascunho",
+  [FERRAMENTA.chamarAnalista]: "transferiu_para_analista",
 };
 
 const TENTATIVA_POR_FERRAMENTA: Record<
@@ -107,6 +108,7 @@ const TENTATIVA_POR_FERRAMENTA: Record<
   [FERRAMENTA.proporChamado]: () => "montar o rascunho",
   [FERRAMENTA.proporAtualizacao]: (codigo) =>
     `preparar a atualização do ${codigo}`,
+  [FERRAMENTA.chamarAnalista]: () => "preparar o resumo para o analista",
 };
 
 const codigoDaEntrada = ({ entrada }: ChamadaDeFerramenta) =>
@@ -244,6 +246,15 @@ function acoesDeUmaChamada(chamada: ChamadaDeFerramenta): AcaoDoAgent[] {
             },
           ];
 
+    case FERRAMENTA.chamarAnalista:
+      return [
+        {
+          tipo: "transferiu_para_analista",
+          descricao: "preparou o resumo para o analista",
+          sucesso,
+        },
+      ];
+
     case FERRAMENTA.proporAtualizacao: {
       const permitida = propostaDeAtualizacaoPermitida.safeParse(saida);
       const recusada = propostaDeAtualizacaoRecusada.safeParse(saida);
@@ -346,6 +357,15 @@ export function dadosConsultadosNasFerramentas(
     ],
   };
 }
+
+const resumoDoAnalista = z.object({ resumo: z.string().min(1) });
+
+export const resumoParaAnalistaDasFerramentas = (
+  chamadas: ChamadaDeFerramenta[],
+): string | null =>
+  saidasBemSucedidas(chamadas, FERRAMENTA.chamarAnalista)
+    .map((saida) => resumoDoAnalista.safeParse(saida).data?.resumo ?? null)
+    .findLast((resumo) => resumo !== null) ?? null;
 
 export const houveChamadoVencido = (chamadas: ChamadaDeFerramenta[]) =>
   dadosConsultadosNasFerramentas(chamadas).chamadoConsultado?.vencido === true;

@@ -13,6 +13,15 @@ export const MOTIVOS_DE_TRANSFERENCIA = [
 ] as const;
 export type MotivoDeTransferencia = (typeof MOTIVOS_DE_TRANSFERENCIA)[number];
 
+// O Anexo A lista chamado vencido como gatilho, mas o protótipo mostra o agent
+// oferecendo o analista nesse caso, em vez de transferir sozinho.
+const MOTIVOS_QUE_APENAS_OFERECEM: readonly MotivoDeTransferencia[] = [
+  "chamado_vencido",
+];
+
+export const transfereImediatamente = (motivo: MotivoDeTransferencia) =>
+  !MOTIVOS_QUE_APENAS_OFERECEM.includes(motivo);
+
 export type SituacaoDaConversa = {
   funcionarioPediu: boolean;
   prioridadeDoCaso: Prioridade | null;

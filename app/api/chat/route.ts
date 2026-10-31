@@ -7,6 +7,7 @@ import {
 } from "@/application/usecases/responder-mensagem";
 import {
   assistente,
+  repositorioDeChamados,
   repositorioDeConversas,
 } from "@/infrastructure/dependencias";
 import { paraMensagemNaTela, type EventoDoChat } from "@/lib/mensagem-na-tela";
@@ -44,7 +45,11 @@ export async function POST(requisicao: Request): Promise<Response> {
 
       try {
         const resultado = await responderMensagem(
-          { conversas, assistente: assistente() },
+          {
+            conversas,
+            chamados: repositorioDeChamados(),
+            assistente: assistente(),
+          },
           { funcionario, texto: corpo.data.texto },
           {
             aoUsarFerramenta: (chamada) => {
@@ -71,6 +76,10 @@ export async function POST(requisicao: Request): Promise<Response> {
                 mensagemDoFuncionario,
                 resposta: paraMensagemNaTela(resultado.resposta),
                 mensagensEnviadas,
+                transferencia:
+                  resultado.transferencia === null
+                    ? null
+                    : paraMensagemNaTela(resultado.transferencia.aviso),
               }
             : {
                 tipo: "com_analista",

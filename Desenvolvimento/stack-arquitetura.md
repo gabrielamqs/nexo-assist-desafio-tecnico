@@ -66,6 +66,7 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   usecases/
     responder-mensagem.ts   (uma rodada de conversa: histórico → agent → decisão persistida; limite de 30)
     carregar-conversa.ts    (conversa ativa e histórico para a tela)
+    transferir-conversa.ts  (estado, resumo, chamado e marco na conversa)
     confirmar-proposta.ts   (cria/atualiza o chamado só no clique de confirmação; cancelar)
     autenticar.ts
   acoes-do-agent.ts         (chamadas de ferramenta → ações exibidas, detalhes, proposta e dados dos cards)
@@ -198,6 +199,14 @@ Transparência se resolve com o modificador do Tailwind sobre o token (`bg-criti
 - **Evidência obrigatória para impacto e urgência.** O `propor_chamado` exige o trecho literal do que a pessoa escreveu para "quem é afetado" e para a urgência, e confere esse trecho nas mensagens dela (sem acento, caixa ou pontuação). Sem trecho válido, o campo é descartado e volta como "falta perguntar". Impede o modelo de inventar; não impede interpretar demais um trecho que existe — esses casos foram para o eval set da Etapa 9.
 - **Átomos novos que centralizam combinações**: `Selo` (o único lugar que define como cada prioridade e status aparece), `Aviso` (erro, atenção, informação — o login passou a usar também) e `MedidorDeConfianca`. `Botao` ganhou `tamanho` para as respostas rápidas não sobrescreverem classes por fora.
 - **Datas gravadas sem termos relativos.** Detalhes que ficam salvos usam data absoluta ("09 mar, 18:00"); "hoje"/"amanhã" só em texto de conversa, que tem horário ao lado.
+
+## Decisões da transferência para analista (Etapa 7)
+
+- **Transferir na hora, ou apenas oferecer.** O Anexo A lista chamado vencido entre os gatilhos, mas o protótipo (Tela 3) mostra o agent *perguntando* "Quer que eu chame um analista?" nesse caso. Segui o protótipo: pedido da pessoa, caso crítico, baixa confiança e limite de mensagens transferem na hora; chamado vencido só recomenda, e a transferência acontece se a pessoa aceitar — o que cai em "o funcionário pediu". A distinção mora no domínio (`transfereImediatamente`), não na tela.
+- **O resumo é escrito pelo modelo sem chamada extra.** A ferramenta `chamar_analista` só registra o texto, dentro da mesma chamada que já está acontecendo; quem decide se transfere continua sendo a regra. Se o modelo não escrever, o código monta um resumo com o entendimento, o chamado em questão e o motivo. Resultado real: "A usuária Carla Mendes (Comercial) solicitou atendimento com um analista devido ao seu notebook lento. Não há chamado aberto sobre este problema específico."
+- **A transferência também alcança o chamado.** Se a conversa girava em torno de um chamado, ele vai para "aguardando analista" com o resumo no histórico. Uma falha do sistema legado aqui **não desfaz** a transferência da conversa: ela já aconteceu, e o chamado fica para o analista acertar. Há teste com o repositório falhando.
+- **O agent pausa por estado da conversa, não por sinalizador na tela.** Enquanto o estado não for `com_agent`, `responderMensagem` grava a mensagem da pessoa (o analista precisa vê-la) e devolve sem chamar o modelo. Conferido no teste real: depois de transferir, "Alguém aí?" entrou na conversa e o agent não respondeu.
+- **O motivo fica visível para os dois lados**, numa mensagem de sistema no fio da conversa ("Transferida para um analista · a pessoa pediu um analista"), que o funcionário vê como marco e o analista lerá no histórico na Etapa 8.
 
 ## Decisões de comportamento do agent
 
