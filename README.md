@@ -81,33 +81,55 @@ Para ver o fluxo completo: entre como Carla, que tem um chamado crítico vencido
 
 ## Deploy
 
-O app precisa de **processo longo e disco persistente** (SQLite em arquivo + um servidor MCP que o próprio app consome), então não é serverless. O repositório já vem com `railway.json` apontando o build, o comando de start e o healthcheck.
+O app precisa de **processo longo e disco persistente** (SQLite em arquivo + um servidor MCP que o próprio app consome), então não é serverless. O repositório vem com `Dockerfile` (multi-stage, output `standalone` do Next) e `fly.toml` já configurados para a [Fly.io](https://fly.io).
 
-### Railway, passo a passo
+> A primeira escolha de deploy era a Railway — o repositório chegou a ter um `railway.json` pronto. Na hora de criar a conta, a Railway [suspendeu novos cadastros por um incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. O PRD lista Fly.io como alternativa igualmente válida, e ela atende ao mesmo requisito (volume persistente), então a troca foi direta. Detalhes em `Desenvolvimento/stack-arquitetura.md`.
 
-1. **Criar o projeto** a partir deste repositório ("Deploy from GitHub repo"). O Nixpacks detecta o Next.js e usa `npm run build` / `npm run start`.
-2. **Criar o volume** e montá-lo em `/data`. Sem isso, cada deploy começa com o banco vazio — os chamados e conversas somem.
-3. **Definir as variáveis** em Settings → Variables:
+### Fly.io, passo a passo
 
-   | Variável         | Valor                              |
-   | ---------------- | ---------------------------------- |
-   | `GEMINI_API_KEY` | sua chave do Google AI Studio      |
-   | `SESSION_SECRET` | saída de `openssl rand -base64 32` |
-   | `DATABASE_URL`   | `file:/data/nexo-assist.db`        |
-   | `NODE_ENV`       | `production`                       |
+Pré-requisito: [`flyctl`](https://fly.io/docs/flyctl/install/) instalado e autenticado (`fly auth login`).
 
-   `PORT` é definida pela Railway. `MCP_SERVER_URL` fica em branco de propósito — ela é derivada de `PORT`.
+1. **Criar o app** a partir do repositório:
 
-4. **Gerar o domínio** em Settings → Networking → Generate Domain.
-5. **Conferir**: `GET /api/saude` deve responder `{"estado":"ok"}`. É o healthcheck que a Railway usa; se o banco não responder, devolve 503 e a Railway reverte o deploy.
+   ```bash
+   fly launch --no-deploy
+   ```
 
-Migrations e seed rodam sozinhos ao subir (`instrumentation.ts`). O seed só insere quando o banco está vazio, então reiniciar não apaga nem duplica nada.
+   O `flyctl` detecta o `Dockerfile` e o `fly.toml` existentes e pergunta o nome do app (precisa ser único globalmente) e a região — `fly.toml` já sugere `gru` (São Paulo). Ele propõe criar um volume: aceite, ou crie manualmente no passo 2.
+
+2. **Criar o volume** (se ainda não existir), na mesma região do app:
+
+   ```bash
+   fly volumes create nexo_assist_data --region gru --size 1
+   ```
+
+   Sem o volume montado em `/data`, cada deploy começa com o banco vazio — os chamados e conversas somem.
+
+3. **Definir os segredos** (nunca vão para `fly.toml`, que é versionado):
+
+   ```bash
+   fly secrets set GEMINI_API_KEY="sua-chave" SESSION_SECRET="$(openssl rand -base64 32)" DATABASE_URL="file:/data/nexo-assist.db"
+   ```
+
+   `NODE_ENV=production` é definida automaticamente pelo builder do Next em runtime nesse Dockerfile. `PORT` já vem de `fly.toml`. `MCP_SERVER_URL` fica de fora de propósito — é derivada de `PORT`.
+
+4. **Publicar**:
+
+   ```bash
+   fly deploy
+   ```
+
+5. **Conferir**: `fly status` mostra a URL pública; `GET /api/saude` deve responder `{"estado":"ok"}`. É o healthcheck que o `fly.toml` configura — se o banco não responder, a Fly marca a máquina como não saudável e não promove o deploy.
+
+Migrations e seed rodam sozinhos ao subir (`instrumentation.ts`). O seed só insere quando o banco está vazio, então reiniciar não apaga nem duplica nada — testado localmente recriando o container do zero sobre o mesmo volume Docker.
 
 ### O que conferir antes do primeiro deploy
 
-- `NODE_ENV=production` torna `GEMINI_API_KEY` e `SESSION_SECRET` obrigatórias. Faltando qualquer uma, o `instrumentation.ts` falha: o processo continua de pé, mas **toda requisição devolve 500** e o log nomeia a variável que faltou, nunca o valor. Como `/api/saude` também devolve 500, a Railway reprova o healthcheck e não promove o deploy.
-- **Uma instância só.** O banco é um arquivo no volume e o limite de uso é contado em memória; escalar horizontalmente exige trocar os dois.
-- `TICKET_SERVICE_FAILURE_RATE` continua em `0.08` — o sistema legado vai falhar de vez em quando de propósito, porque o desafio pede tratamento de indisponibilidade. Para uma demonstração ao vivo sem sustos, defina `0`.
+- `NODE_ENV=production` torna `GEMINI_API_KEY` e `SESSION_SECRET` obrigatórias. Faltando qualquer uma, o `instrumentation.ts` falha: o processo continua de pé, mas **toda requisição devolve 500** e o log nomeia a variável que faltou, nunca o valor. Como `/api/saude` também devolve 500, o healthcheck reprova e a Fly não promove o deploy.
+- **Uma instância só.** O banco é um arquivo no volume e o limite de uso é contado em memória; escalar horizontalmente exige trocar os dois. `fly.toml` já fixa 1 processo.
+- **Custo controlado**: `auto_stop_machines` + `min_machines_running = 0` em `fly.toml` colocam a máquina para dormir sem tráfego e acordam sozinhas na próxima requisição — atende ao pedido do PRD de limitar custo inesperado num diferencial opcional.
+- `TICKET_SERVICE_FAILURE_RATE` continua em `0.08` — o sistema legado vai falhar de vez em quando de propósito, porque o desafio pede tratamento de indisponibilidade. Para uma demonstração ao vivo sem sustos, defina `0` com `fly secrets set`.
+- **256 MB é a menor VM da Fly.io hoje** (`shared-cpu-1x`), e é o que `fly.toml` pede. Next.js + o servidor MCP no mesmo processo cabem nisso numa demo de baixo tráfego, mas é pouca margem. Se `fly logs` mostrar a máquina reiniciando sozinha (sinal de OOM kill), suba para 512 MB com `fly scale memory 512` — não precisa editar `fly.toml`, o comando já persiste a mudança.
 
 ## Visão geral da arquitetura
 

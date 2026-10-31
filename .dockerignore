@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+data
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+Desenvolvimento
+Documentacao
+coverage
+*.md

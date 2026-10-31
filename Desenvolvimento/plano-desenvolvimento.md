@@ -192,21 +192,34 @@ Registrado para não virar "bug" em revisão futura.
 
 ## Etapa 13 — Deploy (diferencial)
 
-### Preparo do repositório (feito)
+### Preparo do repositório, primeira rodada — Railway (substituída)
 - [x] `railway.json` com builder Nixpacks, comando de start, healthcheck e política de reinício
-- [x] `GET /api/saude` conferindo o banco — é o healthcheck que a Railway usa para promover ou reprovar o deploy
-- [x] `MCP_SERVER_URL` derivada de `PORT` quando não informada: a porta em produção é dinâmica e o valor fixo `localhost:3000` quebraria o serviço de chamados
-- [x] Limite de uso por pessoa em `/api/chat` (15 mensagens por minuto, `lib/limite-de-uso.ts`), para uma aba em laço não queimar a cota do Gemini
-- [x] `.env.example` com as notas de produção (caminho do volume, variáveis obrigatórias)
+- [x] `GET /api/saude` conferindo o banco — ver abaixo, ficou e serve para qualquer plataforma
+- [x] `MCP_SERVER_URL` derivada de `PORT` quando não informada — ver abaixo, decisão agnóstica de plataforma, ficou
+- [x] Limite de uso por pessoa em `/api/chat` (15 mensagens por minuto, `lib/limite-de-uso.ts`) — ficou
 - [x] Seção "Deploy" no README com o passo a passo da Railway
 
-**Verificado localmente** com `next start` e variáveis de produção, banco num caminho absoluto fora do repositório (simulando o volume):
-- migrations e seed rodam sozinhos num banco vazio; `/api/saude` e `/login` respondem 200
-- sem `GEMINI_API_KEY`/`SESSION_SECRET` em produção, o `instrumentation.ts` falha e **toda requisição devolve 500**, com o log nomeando a variável que faltou e nunca o valor. O processo não encerra — por isso o healthcheck importa: é ele que faz a Railway reprovar o deploy
+Na hora de criar a conta na Railway, os cadastros estavam suspensos por um [incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. Como o PRD lista Fly.io como alternativa igualmente válida ("Pode ser em qualquer plataforma: Vercel, Railway, Fly.io, Render ou outra") e ela atende ao mesmo requisito técnico (volume persistente), a etapa foi refeita para Fly.io em vez de esperar. `railway.json` foi removido; o raciocínio da troca está em `Desenvolvimento/stack-arquitetura.md`, seção "Railway → Fly.io".
 
-### Falta fazer (precisa da conta da Railway)
-- [ ] Criar o projeto a partir do repositório
-- [ ] Criar o volume e montar em `/data`
-- [ ] Definir `GEMINI_API_KEY`, `SESSION_SECRET`, `DATABASE_URL=file:/data/nexo-assist.db` e `NODE_ENV=production`
-- [ ] Gerar o domínio e conferir `/api/saude`
-- [ ] Anotar a URL pública no README
+### Preparo do repositório, segunda rodada — Fly.io (feito)
+- [x] `output: "standalone"` no `next.config.ts`, para uma imagem Docker enxuta
+- [x] `Dockerfile` multi-stage (deps/builder/runner), usuário não-root, `/data` como ponto de montagem do volume
+- [x] `.dockerignore`
+- [x] `fly.toml`: região `gru`, healthcheck em `/api/saude`, volume `nexo_assist_data` em `/data`, `auto_stop_machines`/`min_machines_running = 0` para custo zero quando ocioso (pedido do PRD: "limite o uso para evitar [...] custo inesperado")
+- [x] Seção "Deploy" no README reescrita para o fluxo `flyctl` (`fly launch`, `fly volumes create`, `fly secrets set`, `fly deploy`)
+
+**Verificado de ponta a ponta com Docker local** (não só lendo o Dockerfile — rodando de verdade):
+- `docker build` conclui e gera a imagem a partir do `Dockerfile`
+- container sobe com volume Docker montado em `/data`, variáveis de produção, `GEMINI_API_KEY` e `SESSION_SECRET` de teste: `/api/saude` e `/login` respondem 200, banco criado dentro do volume (não na camada do container)
+- **teste de persistência real**: parei e removi o container, subi um container novo com o mesmo volume — o arquivo do banco manteve tamanho e data de modificação (não foi recriado), e o seed não rodou de novo (só insere em banco vazio)
+- recursos de teste (container, volume, imagem) removidos depois
+
+Continua valendo, independente da plataforma: sem `GEMINI_API_KEY`/`SESSION_SECRET` em produção, o `instrumentation.ts` falha e **toda requisição devolve 500**, com o log nomeando a variável que faltou e nunca o valor. O processo não encerra — por isso o healthcheck importa: é ele que faz a plataforma reprovar o deploy.
+
+### Falta fazer (precisa da conta da Fly.io)
+- [ ] `fly auth login`
+- [ ] `fly launch --no-deploy` (ou criar o app manualmente com o nome livre, já que `nexo-assist` pode estar em uso)
+- [ ] `fly volumes create nexo_assist_data --region gru --size 1`
+- [ ] `fly secrets set GEMINI_API_KEY=... SESSION_SECRET=... DATABASE_URL=file:/data/nexo-assist.db`
+- [ ] `fly deploy`
+- [ ] Conferir `/api/saude` na URL pública e anotá-la no README

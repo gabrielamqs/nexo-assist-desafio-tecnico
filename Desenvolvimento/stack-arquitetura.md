@@ -17,13 +17,17 @@ Este documento é um resumo interpretado, não a fonte original. Fontes: `../Doc
 | Organização de componentes | Atomic Design (atoms/molecules/organisms/templates) | Escalável sem overhead de ferramental extra |
 | ORM / banco | Drizzle + SQLite | TS-first, leve, roda bem com arquivo local e com volume persistente |
 | Testes | Vitest | Padrão de fato em projetos TS/Next |
-| Deploy | Railway | Suporta volume persistente (SQLite sobrevive a restart); Vercel tem filesystem efêmero nas functions, incompatível com esse requisito |
+| Deploy | Fly.io | Suporta volume persistente (SQLite sobrevive a restart); Vercel tem filesystem efêmero nas functions, incompatível com esse requisito. Railway era a primeira escolha, mas um incidente de segurança (ataques de criação de contas em massa) suspendeu novos cadastros na época do deploy — ver nota abaixo |
 
 ## Por que não Vercel para o deploy
 
-Funções serverless da Vercel têm filesystem efêmero e não compartilhado entre instâncias — um arquivo SQLite local não persiste de forma confiável. Railway roda um processo Node persistente com volume de disco real, então SQLite "puro" funciona sem troca de banco. Também evita conflito com outro projeto já hospedado no Vercel.
+Funções serverless da Vercel têm filesystem efêmero e não compartilhado entre instâncias — um arquivo SQLite local não persiste de forma confiável. Um processo Node persistente com volume de disco real resolve isso, então SQLite "puro" funciona sem troca de banco. Também evita conflito com outro projeto já hospedado no Vercel.
 
-Ponto de atenção ao configurar o volume no Railway: o volume só existe em runtime (não em build) — a criação/migração do banco precisa acontecer no startup do app, com o caminho do arquivo apontando para o mount path absoluto do volume, não um caminho relativo.
+Ponto de atenção ao configurar o volume (vale para Railway e para Fly.io): o volume só existe em runtime (não em build) — a criação/migração do banco precisa acontecer no startup do app, com o caminho do arquivo apontando para o mount path absoluto do volume, não um caminho relativo. É exatamente o que `instrumentation.ts` já faz.
+
+## Railway → Fly.io: troca de plataforma em runtime
+
+A primeira escolha de deploy foi a Railway (ver tabela acima), com `railway.json` e documentação prontos na Etapa 13. Na hora de efetivamente criar a conta, a Railway tinha suspendido novos cadastros por causa de um [incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. Como o PRD lista Fly.io como alternativa igualmente válida ("Pode ser em qualquer plataforma: Vercel, Railway, Fly.io, Render ou outra"), e Fly.io atende ao mesmo requisito técnico (volume persistente, processo de vida longa), a troca foi direta: `railway.json` saiu, entrou `Dockerfile` + `fly.toml`, e o resto (derivação de `MCP_SERVER_URL` por `PORT`, `/api/saude`, limite de uso) é agnóstico de plataforma e não mudou.
 
 ## Arquitetura interna — "Clean Architecture lite"
 
