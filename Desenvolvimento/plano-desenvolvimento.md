@@ -25,6 +25,7 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 
 - **Sem comentários.** Código limpo e autoexplicativo — nomes de variáveis/funções bons substituem comentário. Só abrir exceção para algo genuinamente não óbvio (uma invariante escondida, um workaround de bug específico), e mesmo assim em uma linha curta.
 - **Boas práticas sempre**: DRY e SOLID onde fazem sentido para o contexto (não aplicar como regra cega onde adiciona abstração sem ganho real — ver nota sobre "Clean Architecture lite" em `stack-arquitetura.md`, o mesmo princípio de pragmatismo vale aqui).
+- **Valores de design centralizados, nunca literais espalhados pelo código.** Cor é o caso mais claro — nenhum hex, nenhuma cor da paleta padrão do Tailwind, nenhum `text-white`/`bg-white` solto num componente. Sempre via token nomeado semanticamente (pela função, não pela cor), definido em um lugar só. O mesmo princípio vale para outros valores de design que se repetem (espaçamento, raio de borda, etc.) se aparecer o mesmo padrão. *Obs: regra percebida durante o desenvolvimento, não prevista desde o início — surgiu do commit `refact: centraliza tokens de cor com nomes semânticos`, documentado em "Convenção de estilo" em `stack-arquitetura.md`.*
 
 ---
 
@@ -59,11 +60,12 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Sessão simples, roteamento por papel (decisão própria — PRD não detalha login do analista, ver `stack-arquitetura.md`)
 
 ## Etapa 5 — Agent (Mastra)
-- [ ] Configuração do agent com Gemini
-- [ ] `MCPClient` consumindo o `/api/mcp`
-- [ ] Prompt / regras do Anexo A injetadas no system prompt
-- [ ] Structured output: decisão + confiança + justificativa
-- [ ] Casos de uso (`application/usecases`) orquestrando domain + ports
+- [x] Configuração do agent com Gemini
+- [x] `MCPClient` consumindo o `/api/mcp`
+- [x] Prompt / regras do Anexo A injetadas no system prompt
+- [x] Structured output: decisão + confiança + justificativa
+- [x] Casos de uso (`application/usecases`) orquestrando domain + ports
+- [ ] Teste de ponta a ponta com o Gemini real (`npm run conversar`) — pendente da `GEMINI_API_KEY`; o loop já está coberto por testes com modelo roteirizado
 
 ## Etapa 6 — Chat do funcionário (UI)
 - [ ] Telas 2 e 3 — **ver protótipo** para layout/comportamento esperado; rascunho só confirma após aprovação do funcionário (regra de abertura, Anexo A)
