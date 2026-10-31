@@ -96,12 +96,13 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] O chat do funcionário se atualiza sozinho quando o analista assume, responde, devolve ou encerra
 
 ## Etapa 11 — README final
-- [ ] Como rodar
-- [ ] Visão geral da arquitetura (linkar/resumir `stack-arquitetura.md`)
-- [ ] Como o agent decide o que fazer
-- [ ] Como a qualidade das decisões foi garantida
-- [ ] Trade-offs principais
-- [ ] O que faria com mais tempo
+- [x] Como rodar
+- [x] Visão geral da arquitetura (linkar/resumir `stack-arquitetura.md`)
+- [x] Como o agent decide o que fazer
+- [x] Como a qualidade das decisões foi garantida
+- [x] Trade-offs principais
+- [x] O que faria com mais tempo
+- [x] Escolha do modelo e segurança/privacidade (o PRD pede que a escolha do provedor seja explicada no README)
 
 ## Etapa 12 — Deploy (diferencial)
 - [ ] Deploy no Railway com volume persistente
