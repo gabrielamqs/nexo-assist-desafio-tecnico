@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { ArrowRight, Check, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useActionState, useState } from "react";
 import { entrar } from "@/app/login/acoes";
 import { ESTADO_INICIAL_DO_LOGIN } from "@/app/login/estado";
@@ -69,19 +69,30 @@ export function FormularioDeLogin({
         />
       </CampoDeFormulario>
 
-      <label className="flex items-center gap-2 text-sm text-tinta-media">
-        <input
-          type="checkbox"
-          name="manterConectado"
-          defaultChecked
-          className="h-4 w-4 rounded border-borda text-primario-texto focus-visible:outline-2 focus-visible:outline-primario"
-        />
+      <label className="flex items-center gap-2.5 text-sm text-tinta-media">
+        <span className="relative flex">
+          <input
+            type="checkbox"
+            name="manterConectado"
+            defaultChecked
+            className="peer h-4.5 w-4.5 appearance-none rounded-md border border-borda-forte bg-superficie checked:border-primario-acao checked:bg-primario-acao focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primario"
+          />
+          <Check
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 m-auto hidden h-3 w-3 text-tinta-invertida peer-checked:block"
+          />
+        </span>
         Manter conectado neste computador
       </label>
 
       {estado.erro !== null && <Aviso tipo="erro">{estado.erro}</Aviso>}
 
-      <Botao type="submit" largura="total" carregando={enviando}>
+      <Botao
+        type="submit"
+        largura="total"
+        carregando={enviando}
+        className="sombra-de-acao"
+      >
         {enviando ? "Entrando..." : "Entrar"}
         {!enviando && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
       </Botao>

@@ -12,10 +12,10 @@ const ACOES_DO_EXEMPLO = ["consultou seus chamados", "criou um chamado"];
 export function VitrineDoAssistente() {
   return (
     <div className="flex h-full min-h-fit flex-col justify-between gap-6 bg-superficie-escura px-8 py-7 text-tinta-invertida xl:px-12 xl:py-10">
-      <MarcaNexoAssist tom="claro" />
+      <MarcaNexoAssist tom="claro" tamanho="grande" />
 
       <div className="space-y-5">
-        <p className="text-xs font-medium tracking-wide text-tinta-invertida-fraca uppercase">
+        <p className="text-sm font-medium text-tinta-invertida-fraca">
           Service desk de TI da Nexo
         </p>
         <h1 className="font-serif text-4xl leading-tight text-balance xl:text-5xl">
@@ -27,7 +27,7 @@ export function VitrineDoAssistente() {
         </p>
 
         <div className="max-w-md space-y-3 rounded-2xl border border-borda-escura bg-superficie-escura-alta p-4">
-          <p className="ml-auto w-fit rounded-2xl rounded-br-sm bg-superficie px-3 py-2 text-sm text-tinta">
+          <p className="ml-auto w-fit rounded-xl rounded-br bg-superficie px-3 py-2 text-sm text-tinta">
             Meu notebook não conecta na VPN. Erro 809.
           </p>
 
@@ -43,7 +43,7 @@ export function VitrineDoAssistente() {
             ))}
           </div>
 
-          <p className="w-fit rounded-2xl rounded-bl-sm bg-superficie-escura-mais-alta px-3 py-2 text-sm">
+          <p className="w-fit rounded-xl rounded-tl bg-superficie-escura-mais-alta px-3 py-2 text-sm">
             Pronto: abri o chamado com prioridade alta. Um analista fala com
             você em até 4 h úteis.
           </p>
@@ -64,7 +64,7 @@ export function VitrineDoAssistente() {
       <dl className="grid grid-cols-3 divide-x divide-borda-escura border-t border-borda-escura pt-5">
         {NUMEROS.map(({ valor, legenda }) => (
           <div key={legenda} className="px-5 first:pl-0 last:pr-0">
-            <dt className="font-serif text-2xl">{valor}</dt>
+            <dt className="font-serif text-3xl xl:text-4xl">{valor}</dt>
             <dd className="mt-1 text-xs text-tinta-invertida-fraca">
               {legenda}
             </dd>

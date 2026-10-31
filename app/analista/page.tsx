@@ -43,10 +43,11 @@ export default async function PaginaDoAnalista({
     : FILTRO_PADRAO;
   const conversaPedida =
     typeof parametros.conversa === "string" ? parametros.conversa : null;
+  const busca = typeof parametros.busca === "string" ? parametros.busca : "";
 
   const conversas = repositorioDeConversas();
   const [itens, contagem] = await Promise.all([
-    listarFila({ conversas }, { analista, filtro }),
+    listarFila({ conversas }, { analista, filtro, busca }),
     contarPorFiltro({ conversas }, analista, FILTROS_DA_FILA),
   ]);
 
@@ -65,11 +66,13 @@ export default async function PaginaDoAnalista({
   return (
     <LayoutDoConsole
       analista={analista}
+      aguardando={contagem.para_voce}
       fila={
         <FilaDeConversas
           itens={itens}
           contagem={contagem}
           filtroAtivo={filtro}
+          busca={busca}
           conversaAtiva={atendimento?.conversa.id ?? null}
         />
       }
@@ -93,10 +96,10 @@ export default async function PaginaDoAnalista({
         </div>
       ) : (
         <>
-          <header className="flex items-center gap-3 border-b border-borda px-4 py-3 sm:px-6">
+          <header className="flex items-center gap-3 border-b border-borda bg-superficie px-4 py-3 sm:px-5">
             <Avatar nome={atendimento.funcionario.nome} />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-tinta">
+              <p className="truncate text-sm font-semibold text-tinta">
                 {atendimento.funcionario.nome}
               </p>
               <p className="truncate text-xs text-tinta-fraca">
@@ -107,7 +110,7 @@ export default async function PaginaDoAnalista({
           </header>
 
           {atendimento.conversa.resumoParaAnalista !== null && (
-            <div className="border-b border-borda bg-primario-suave px-4 py-3 sm:px-6">
+            <div className="border-b border-borda bg-primario-suave px-4 py-3 sm:px-5">
               <p className="text-xs font-medium tracking-wide text-primario-texto uppercase">
                 Resumo do caso
               </p>
@@ -120,6 +123,11 @@ export default async function PaginaDoAnalista({
           <div className="min-h-0 flex-1 overflow-y-auto">
             <TranscricaoDaConversa
               mensagens={atendimento.mensagens.map(paraMensagemNaTela)}
+              nomeDoAnalista={
+                atendimento.conversa.analistaId === analista.id
+                  ? analista.nome
+                  : undefined
+              }
             />
           </div>
 

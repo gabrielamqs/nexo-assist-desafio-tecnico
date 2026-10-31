@@ -9,18 +9,28 @@ type Props = {
 
 export function Cartao({ cabecalho, selo, rodape, children }: Props) {
   return (
-    <section className="overflow-hidden rounded-xl border border-borda bg-superficie">
-      <header className="flex items-center justify-between gap-3 border-b border-borda bg-superficie-baixa px-4 py-2 text-xs text-tinta-fraca">
-        <span>{cabecalho}</span>
-        {selo}
-      </header>
-      <div className="space-y-3 p-4">{children}</div>
+    <section className="overflow-hidden rounded-2xl border border-borda-forte bg-superficie sombra-de-cartao">
+      <div className="space-y-1.5 px-4.5 pt-4 pb-3.5">
+        <header className="flex items-center justify-between gap-3 text-xs text-tinta-fraca">
+          <span>{cabecalho}</span>
+          {selo}
+        </header>
+        {children}
+      </div>
       {rodape !== undefined && (
-        <footer className="flex flex-wrap items-center gap-2 border-t border-borda px-4 py-3">
+        <footer className="flex flex-wrap items-center gap-1.5 border-t border-borda bg-superficie-baixa px-3.5 py-2">
           {rodape}
         </footer>
       )}
     </section>
+  );
+}
+
+export function GradeDoCartao({ children }: { children: ReactNode }) {
+  return (
+    <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-borda pt-3 sm:grid-cols-4">
+      {children}
+    </dl>
   );
 }
 
@@ -34,7 +44,7 @@ export function CampoDoCartao({
   return (
     <div>
       <dt className="text-xs text-tinta-fraca">{rotulo}</dt>
-      <dd className="mt-0.5 text-sm text-tinta">{children}</dd>
+      <dd className="mt-1 text-sm font-medium text-tinta">{children}</dd>
     </div>
   );
 }

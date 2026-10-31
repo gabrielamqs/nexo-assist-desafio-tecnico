@@ -46,15 +46,38 @@ export type AtendimentoCarregado = {
   podeResponder: boolean;
 };
 
+const normalizar = (texto: string) =>
+  texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
+const atendeABusca = (item: ConversaNaFila, busca: string) => {
+  const procurado = normalizar(busca);
+  const campos = [
+    item.funcionario.nome,
+    item.funcionario.email,
+    item.funcionario.departamento,
+    item.conversa.resumoParaAnalista ?? "",
+    item.ultimaMensagem?.conteudo ?? "",
+  ];
+
+  return campos.some((campo) => normalizar(campo).includes(procurado));
+};
+
 export async function listarFila(
   { conversas }: Pick<DependenciasDoConsole, "conversas">,
-  { analista, filtro }: { analista: Usuario; filtro: FiltroDaFila },
+  {
+    analista,
+    filtro,
+    busca = "",
+  }: { analista: Usuario; filtro: FiltroDaFila; busca?: string },
 ): Promise<ConversaNaFila[]> {
   const fila = await conversas.listarParaAnalista();
 
-  return fila.filter((item) =>
-    pertenceAoFiltro(item.conversa, filtro, analista.id),
-  );
+  return fila
+    .filter((item) => pertenceAoFiltro(item.conversa, filtro, analista.id))
+    .filter((item) => busca.trim() === "" || atendeABusca(item, busca.trim()));
 }
 
 export async function contarPorFiltro(

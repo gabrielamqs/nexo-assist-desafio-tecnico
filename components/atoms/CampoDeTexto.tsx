@@ -19,7 +19,7 @@ export function CampoDeTexto({
         </span>
       )}
       <input
-        className={`w-full rounded-lg border border-borda bg-superficie py-2.5 text-sm text-tinta placeholder:text-tinta-fraca focus:border-primario focus:outline-2 focus:outline-offset-0 focus:outline-primario/30 ${icone === undefined ? "pl-3" : "pl-10"} ${acessorio === undefined ? "pr-3" : "pr-10"} ${className}`}
+        className={`w-full rounded-lg border border-borda-forte bg-superficie py-2.5 text-sm text-tinta sombra-de-controle placeholder:text-tinta-fraca focus:border-primario focus:outline-2 focus:outline-offset-0 focus:outline-primario/30 ${icone === undefined ? "pl-3" : "pl-10"} ${acessorio === undefined ? "pr-3" : "pr-10"} ${className}`}
         {...resto}
       />
       {acessorio !== undefined && (

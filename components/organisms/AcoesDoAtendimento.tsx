@@ -53,7 +53,7 @@ export function AcoesDoAtendimento({
   const erro = erroDaAcao ?? estadoDaResposta.erro;
 
   return (
-    <div className="space-y-3 border-t border-borda px-4 py-3 sm:px-6">
+    <div className="space-y-3 border-t border-borda bg-superficie px-4 py-3 sm:px-5">
       <div className="flex flex-wrap items-center gap-2">
         {aguardando && (
           <p className="mr-auto text-sm text-tinta-media">

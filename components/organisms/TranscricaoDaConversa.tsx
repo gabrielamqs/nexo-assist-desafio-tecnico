@@ -9,12 +9,23 @@ import {
   MensagemDoAssistente,
 } from "./MensagemDoAssistente";
 
-function conteudoDaMensagem(mensagem: MensagemNaTela) {
+function conteudoDaMensagem(
+  mensagem: MensagemNaTela,
+  nomeDoAnalista: string | undefined,
+) {
   switch (mensagem.autor) {
     case "funcionario":
-      return <BolhaDoFuncionario texto={mensagem.conteudo} />;
+      return (
+        <BolhaDoFuncionario texto={mensagem.conteudo} variante="console" />
+      );
     case "analista":
-      return <MensagemDoAnalista mensagem={mensagem} />;
+      return (
+        <MensagemDoAnalista
+          mensagem={mensagem}
+          nome={nomeDoAnalista}
+          variante="console"
+        />
+      );
     case "sistema":
       return (
         <MarcoDaConversa
@@ -23,14 +34,16 @@ function conteudoDaMensagem(mensagem: MensagemNaTela) {
         />
       );
     case "agent":
-      return <MensagemDoAssistente mensagem={mensagem} />;
+      return <MensagemDoAssistente mensagem={mensagem} variante="console" />;
   }
 }
 
 export function TranscricaoDaConversa({
   mensagens,
+  nomeDoAnalista,
 }: {
   mensagens: MensagemNaTela[];
+  nomeDoAnalista?: string;
 }) {
   if (mensagens.length === 0) {
     return (
@@ -41,13 +54,13 @@ export function TranscricaoDaConversa({
   }
 
   return (
-    <div className="space-y-6 px-4 py-6 sm:px-6">
+    <div className="space-y-5 px-5 py-5 lg:px-10">
       {mensagens.map((mensagem, indice) => (
         <Fragment key={mensagem.id}>
           {mudouDeDia(mensagens[indice - 1], mensagem) && (
-            <SeparadorDeDia criadaEm={mensagem.criadaEm} />
+            <SeparadorDeDia criadaEm={mensagem.criadaEm} variante="console" />
           )}
-          {conteudoDaMensagem(mensagem)}
+          {conteudoDaMensagem(mensagem, nomeDoAnalista)}
         </Fragment>
       ))}
       <RolarParaOFim gatilho={mensagens.at(-1)?.id ?? ""} />

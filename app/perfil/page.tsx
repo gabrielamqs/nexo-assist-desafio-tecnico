@@ -1,4 +1,5 @@
 import { KeyRound, Lock, Mail, RotateCcwKey } from "lucide-react";
+import { Botao } from "@/components/atoms/Botao";
 import { LayoutDoAtendimento } from "@/components/templates/LayoutDoAtendimento";
 import { exigirUsuario } from "@/lib/sessao-servidor";
 
@@ -20,7 +21,7 @@ export default async function PaginaDoPerfil() {
             </p>
           </div>
 
-          <dl className="overflow-hidden rounded-2xl border border-borda-forte bg-superficie">
+          <dl className="overflow-hidden rounded-2xl border border-borda-forte bg-superficie sombra-de-cartao">
             <div className="flex items-center gap-4 border-b border-borda px-6 py-5">
               <dt className="w-40 shrink-0 text-sm text-tinta-fraca">Nome</dt>
               <dd className="flex-1 text-sm font-medium text-tinta">
@@ -49,7 +50,7 @@ export default async function PaginaDoPerfil() {
             </div>
           </dl>
 
-          <section className="overflow-hidden rounded-2xl border border-borda-forte bg-superficie">
+          <section className="overflow-hidden rounded-2xl border border-borda-forte bg-superficie sombra-de-cartao">
             <div className="flex flex-wrap items-center gap-4 p-6">
               <span
                 aria-hidden="true"
@@ -63,10 +64,10 @@ export default async function PaginaDoPerfil() {
                   Gerenciada pela TI da Nexo, junto com a senha da rede.
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-borda-forte px-3.5 py-2 text-sm font-medium text-tinta-fraca">
+              <Botao variante="secundario" disabled>
                 <RotateCcwKey className="h-4 w-4" aria-hidden="true" />
                 Redefinir senha
-              </span>
+              </Botao>
             </div>
             <p className="flex items-center gap-2 border-t border-borda bg-superficie-baixa px-6 py-3 text-xs text-tinta-fraca">
               <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />

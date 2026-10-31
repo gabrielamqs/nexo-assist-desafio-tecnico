@@ -1,9 +1,13 @@
 "use client";
 
-import { CornerDownLeft } from "lucide-react";
+import { useEffect } from "react";
 import { Botao } from "@/components/atoms/Botao";
 import { Selo, SeloDePrioridade } from "@/components/atoms/Selo";
-import { CampoDoCartao, Cartao } from "@/components/molecules/Cartao";
+import {
+  CampoDoCartao,
+  Cartao,
+  GradeDoCartao,
+} from "@/components/molecules/Cartao";
 import { ROTULO_DO_IMPACTO, ROTULO_DO_TIPO } from "@/domain/rotulos";
 import type { PropostaRegistrada } from "@/domain/types";
 import { formatarDataHoraCurta } from "@/lib/formatacao";
@@ -39,8 +43,31 @@ function cabecalhoDa(proposta: PropostaRegistrada) {
     : `Atualização do ${proposta.codigo}`;
 }
 
+function TeclaDeAtalho() {
+  return (
+    <kbd className="rounded bg-superficie/25 px-1.5 py-0.5 text-xs font-normal text-tinta-invertida">
+      Ctrl ↵
+    </kbd>
+  );
+}
+
 export function CartaoDeRascunho({ proposta, acoes }: Props) {
   const pendente = proposta.situacao === "pendente" && acoes !== undefined;
+  const confirmavel = pendente && acoes !== undefined && !acoes.ocupado;
+  const confirmar = acoes?.aoConfirmar;
+
+  useEffect(() => {
+    if (!confirmavel || confirmar === undefined) return;
+
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key !== "Enter" || !(evento.metaKey || evento.ctrlKey)) return;
+      evento.preventDefault();
+      confirmar();
+    };
+
+    window.addEventListener("keydown", aoTeclar);
+    return () => window.removeEventListener("keydown", aoTeclar);
+  }, [confirmavel, confirmar]);
 
   return (
     <Cartao
@@ -51,9 +78,7 @@ export function CartaoDeRascunho({ proposta, acoes }: Props) {
           <>
             <Botao onClick={acoes.aoConfirmar} carregando={acoes.ocupado}>
               {acoes.ocupado ? "Confirmando..." : "Confirmar"}
-              {!acoes.ocupado && (
-                <CornerDownLeft className="h-3.5 w-3.5" aria-hidden="true" />
-              )}
+              {!acoes.ocupado && <TeclaDeAtalho />}
             </Botao>
             <Botao
               variante="secundario"
@@ -80,13 +105,13 @@ export function CartaoDeRascunho({ proposta, acoes }: Props) {
     >
       {proposta.tipo === "criar" ? (
         <>
-          <h3 className="font-semibold text-tinta">
+          <h3 className="text-lg font-semibold tracking-tight text-tinta">
             {proposta.rascunho.titulo}
           </h3>
           <p className="text-sm text-tinta-media">
             {proposta.rascunho.descricao}
           </p>
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <GradeDoCartao>
             <CampoDoCartao rotulo="Tipo">
               {ROTULO_DO_TIPO[proposta.rascunho.tipo]}
             </CampoDoCartao>
@@ -103,7 +128,7 @@ export function CartaoDeRascunho({ proposta, acoes }: Props) {
             <CampoDoCartao rotulo="Afetados">
               {ROTULO_DO_IMPACTO[proposta.rascunho.afetados]}
             </CampoDoCartao>
-          </dl>
+          </GradeDoCartao>
         </>
       ) : (
         <p className="text-sm text-tinta">{proposta.texto}</p>

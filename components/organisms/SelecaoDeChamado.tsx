@@ -12,7 +12,7 @@ export function SelecaoDeChamado({ chamados, ativa, aoEscolher }: Props) {
   return (
     <ul
       aria-label="Escolha um chamado"
-      className="divide-y divide-borda overflow-hidden rounded-xl border border-borda bg-superficie"
+      className="divide-y divide-borda overflow-hidden rounded-2xl border border-borda-forte bg-superficie sombra-de-cartao"
     >
       {chamados.map((chamado) => (
         <li key={chamado.codigo}>
@@ -26,7 +26,7 @@ export function SelecaoDeChamado({ chamados, ativa, aoEscolher }: Props) {
               aria-hidden="true"
               className="h-3.5 w-3.5 shrink-0 rounded-full border border-tinta-fraca"
             />
-            <span className="w-20 shrink-0 font-mono text-xs text-tinta-fraca">
+            <span className="w-20 shrink-0 text-xs text-tinta-fraca">
               {chamado.codigo}
             </span>
             <span className="min-w-0 flex-1 truncate text-sm text-tinta">

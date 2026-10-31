@@ -132,42 +132,62 @@ Etapa aberta depois da Etapa 11, quando o export `nexo.pen` chegou e permitiu co
 
 `font-display` (Newsreader) aparece **só na tela de login** no protótipo — título, "Entrar" e os três números. Todo o resto é `font-ui` (Schibsted Grotesk). `font-data` (IBM Plex Mono) está declarado nas variáveis mas não é usado em nenhum nó.
 
-### 12.2 — Chat do funcionário (Telas 2 e 3)
-- [ ] Coluna de mensagens centralizada: o protótipo usa `padding [28, 200]`, ou seja ~1040 px de coluna útil, não a largura toda
-- [ ] Ícone de check das ações do agent em cinza (`$ink-3`), não verde — no protótipo o check é neutro, a cor fica por conta do erro
-- [ ] Opções rápidas com atalho numérico (1–4) e estado "escolhida" (`primary-soft` + borda `primary`)
-- [ ] Cartão de rascunho no formato do protótipo: raio 16, sombra dupla, "eyebrow" dentro do corpo (`Novo chamado · Rascunho D-381` + estado à direita), título 18 px, grade de 3 campos (Categoria / Prioridade / Afetados — sem "Tipo") sobre régua superior, e rodapé em `desk` com `Confirmar` trazendo a tecla `⌘↵`
-- [ ] Compositor como pílula de 48 px com o botão Enviar dentro, e o contador `18/30 mensagens nesta sessão` alinhado à direita abaixo
-- [ ] Código do chamado em `font-ui`, não `font-mono` (`SelecaoDeChamado`, `PainelDeChamados`)
-- [ ] Elevação dos cartões: raio 16 + borda `#1B243117` + duas sombras suaves — hoje é raio 12 sem sombra
+### 12.2 — Chat do funcionário (Telas 2 e 3) (feito)
+- [x] Ícone de check das ações do agent em cinza (`$ink-3`), não verde
+- [x] Elevação dos cartões: raio 16, borda `#1B243117` e as duas sombras do protótipo, agora em `sombra-de-cartao`
+- [x] Cartão de rascunho e de chamado no formato do protótipo: "eyebrow" dentro do corpo, título 18 px, grade de campos sobre régua superior, rodapé em `desk`
+- [x] `Confirmar` com a tecla de atalho visível — e **o atalho funciona** (Ctrl/⌘+Enter), não é só enfeite
+- [x] Bolhas com raio 12 e canto de 4 px no lado do remetente (eram 16/2 px)
+- [x] Cartões ocupando a largura da coluna (`fill_container` no protótipo), bolha do agent limitada a ~600 px
+- [x] Código do chamado em `font-ui`, não `font-mono`
+- [x] Sombra de controle nos campos de texto e nos botões secundários
 
-### 12.3 — Console do analista (Telas 4 e 5) — reestruturação
-A maior diferença estrutural do projeto. O protótipo não tem o cabeçalho de topo que temos hoje.
-- [ ] Trilha vertical de 64 px em `desk`: marca, ícone "Conversas" com contador de não lidas, e avatar do analista com ponto de online no rodapé
-- [ ] Cabeçalho da lista com título "Conversas" em `font-ui` (hoje está em Newsreader), seletor de disponibilidade ("Disponível") e campo de busca "Pesquisar conversa ou chamado"
-- [ ] Itens da fila: contador de não lidas, ponto de online no avatar, marca de leitura (ticks) na última mensagem do agent, estado "digitando…"
-- [ ] Avatar com cor por pessoa (o protótipo usa um tom por funcionário, não azul para todos)
-- [ ] Transcrição: hora e ticks dentro da bolha, etiqueta "IA" ao lado de "Nexo Assist", e o analista identificado por nome + equipe ("Rafael Lima · Suporte N2") em vez de "Analista de TI"
-- [ ] Separador de dia como pílula, não como linha
-- [ ] Painel de chamados: linha de último evento no chamado da conversa ("Transferido para um analista · 10:05"), outros chamados como linhas compactas com chevron, rodapé "Ver todos os chamados da Ana", e botão de fechar no cabeçalho
+**Duas correções à leitura inicial deste plano**, encontradas ao conferir o `.pen` nó a nó em vez de confiar na primeira passada:
+- Os **atalhos numéricos (1–4)** nas opções rápidas estão com `enabled: false` no protótipo, ou seja, são camadas **ocultas**. Não existem na tela. Item removido.
+- A **largura da coluna de mensagens** já estava certa: `Main` mede 1208 px (1440 − 232 da sidebar) e `Messages` tem padding lateral de 200 px, sobrando 808 px — o nosso `max-w-3xl` dá 768 px. A conta anterior (~1040 px) esquecia de descontar a sidebar. Item removido.
 
-### 12.4 — Tela de login
-- [ ] "Service desk de TI da Nexo" em caixa normal, 13,5 px, peso 500 — hoje está em caixa alta e menor
-- [ ] Números das métricas em 34 px (hoje 24 px)
-- [ ] Botão "Entrar" com as duas sombras do protótipo
-- [ ] Caixa de "Manter conectado" desenhada (18 px, raio 6, preenchida em `cta`) em vez do checkbox nativo
-- [ ] Marca do painel escuro em 24 px (hoje 20 px, igual à da sidebar)
-- [ ] Bolhas do exemplo com raio 12 e canto de 4 px no lado do remetente (hoje 16 px)
+### 12.3 — Console do analista (Telas 4 e 5) (feito)
+- [x] Trilha vertical de 64 px em `desk`: marca, ícone "Conversas" com contador de conversas que esperam atendente, e avatar do analista com ponto de online no rodapé
+- [x] Colunas nas medidas do protótipo: trilha 64, lista 380, transcrição flexível sobre `#EEF1F5`, painel 340
+- [x] Cabeçalho da lista com "Conversas" em `font-ui` (saiu do Newsreader), selo "Disponível" e campo de busca
+- [x] **A busca funciona**: filtra por nome, e-mail, departamento, resumo do caso e última mensagem, sem distinguir acento ou caixa (`listarFila`)
+- [x] Chips de filtro no estilo do protótipo (`desk` / `primary-soft`), não mais azul sólido
+- [x] Itens da fila com avatar de 46 px, raio 12 e o item ativo em `desk`
+- [x] Avatar com cor por pessoa (três tons do protótipo, escolhidos por hash do nome)
+- [x] Transcrição na perspectiva do analista, como no protótipo: funcionário à esquerda em branco, agent à direita em azul-claro com etiqueta "IA", analista à direita em verde-claro
+- [x] Analista identificado pelo nome quando a conversa é dele, em vez de "Analista de TI"
+- [x] Separador de dia como pílula na transcrição (no chat do funcionário segue como linha, que é o que o protótipo mostra lá)
+- [x] Painel: "Outros chamados" como linhas compactas; "Desta conversa" segue como cartão
 
-### 12.5 — Meu perfil
-- [ ] "Redefinir senha" como botão de verdade (hoje é um rótulo inerte com nota de demonstração)
+### 12.4 — Tela de login (feito)
+- [x] "Service desk de TI da Nexo" em caixa normal, 13,5 px, peso 500
+- [x] Números das métricas maiores (30 px, 36 px em telas largas)
+- [x] Botão "Entrar" com as duas sombras do protótipo (`sombra-de-acao`)
+- [x] Caixa de "Manter conectado" desenhada (18 px, raio 6, preenchida em `cta`)
+- [x] Marca do painel escuro em 24 px, maior que a da sidebar
+- [x] Bolhas do exemplo com raio 12 e canto de 4 px
+
+### 12.5 — Meu perfil (feito)
+- [x] "Redefinir senha" como botão de verdade, desabilitado, com a nota explicando que a demo não tem redefinição
 
 ### 12.6 — Divergências deliberadas (não corrigir)
-Registrado para não virar "bug" em revisão futura:
-- **"Como decidi"** (painel de transparência) não existe no protótipo — é exigência do PRD ("Visibilidade das decisões", p.2) e fica.
+Registrado para não virar "bug" em revisão futura.
+
+**Porque o PRD pede, e o protótipo não cobre:**
+- **"Como decidi"** (painel de transparência) não existe no protótipo — é exigência do PRD ("Visibilidade das decisões", p.2) e fica, inclusive na transcrição do analista.
+- **"Tipo"** (incidente/requisição) no cartão de rascunho: o protótipo mostra três campos, nós mostramos quatro. É dado do Anexo A e some informação real se for removido.
 - **Filtro "Encerradas"** na fila é nosso; o protótipo tem quatro filtros.
+- **Departamento** no perfil não está no protótipo, mas é dado real do seed.
+
+**Porque exibir seria inventar dado que o sistema não tem:**
+- **Contador de não lidas por conversa**, **marcas de leitura (ticks)** e **"digitando…"**: não há modelo de leitura nem de presença. O contador da trilha é real (conversas aguardando analista); por conversa, seria número inventado.
+- **Ponto de "online"** no avatar do funcionário na fila: mesma razão. O ponto na trilha é do próprio analista, que está logado — esse é verdade.
+- **"Ver todos os chamados da Ana"** no rodapé do painel e **botão de fechar** o painel: não existe página de listagem nem estado para esconder o painel; seriam controles mortos.
+
+**Outras:**
 - **"Esqueci minha senha"** virou "Qualquer senha é aceita nesta demonstração", porque não há recuperação de senha nesta demo.
-- **Departamento** no perfil não está no protótipo, mas é dado real do seed e ajuda o analista.
+- **Compositor** continua um `textarea` que cresce, em vez da pílula de altura fixa do protótipo: mensagem longa é o caso normal aqui e o protótipo é um mock de uma linha só.
+- **Botão "Sair"** na trilha do console: o protótipo não tem logout em lugar nenhum da tela do analista, e a sessão precisa ser encerrável.
 - O ícone da marca é **cortado à direita** no protótipo (desenho de 24,388 px dentro de uma caixa de 24 px com clip). Reproduzido como está, de propósito.
 
 ## Etapa 13 — Deploy (diferencial)

@@ -12,7 +12,24 @@ type Props = {
   agora: Date;
 };
 
-function ItemDoChamado({
+function Secao({
+  rotulo,
+  children,
+}: {
+  rotulo: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <h3 className="text-xs font-medium tracking-wide text-tinta-fraca uppercase">
+        {rotulo}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function ChamadoEmDestaque({
   chamado,
   agora,
 }: {
@@ -20,9 +37,9 @@ function ItemDoChamado({
   agora: Date;
 }) {
   return (
-    <li className="space-y-1.5 rounded-lg border border-borda p-3">
+    <article className="space-y-1.5 rounded-xl border border-borda-forte bg-superficie p-3 sombra-de-cartao">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-mono text-xs text-tinta-fraca">
+        <span className="text-xs font-semibold text-tinta">
           {chamado.codigo}
         </span>
         <SeloDeStatus status={chamado.status} />
@@ -44,6 +61,20 @@ function ItemDoChamado({
           </p>
         )
       )}
+    </article>
+  );
+}
+
+function ChamadoCompacto({ chamado }: { chamado: ChamadoDoFuncionario }) {
+  return (
+    <li className="flex items-start gap-2.5 py-2">
+      <SeloDeStatus status={chamado.status} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-tinta">
+          {chamado.titulo}
+        </p>
+        <p className="truncate text-xs text-tinta-fraca">{chamado.codigo}</p>
+      </div>
     </li>
   );
 }
@@ -57,7 +88,7 @@ export function PainelDeChamados({ primeiroNome, chamados, agora }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="border-b border-borda px-4 py-4">
+      <header className="border-b border-borda px-5 py-4">
         <h2 className="text-sm font-semibold text-tinta">
           Chamados de {primeiroNome}
         </h2>
@@ -66,7 +97,7 @@ export function PainelDeChamados({ primeiroNome, chamados, agora }: Props) {
         </p>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
         {chamados.length === 0 && (
           <p className="text-sm text-tinta-fraca">
             Este funcionário não tem chamados.
@@ -74,37 +105,31 @@ export function PainelDeChamados({ primeiroNome, chamados, agora }: Props) {
         )}
 
         {desteAtendimento.length > 0 && (
-          <section className="space-y-2">
-            <h3 className="text-xs font-medium tracking-wide text-tinta-fraca uppercase">
-              Desta conversa
-            </h3>
-            <ul className="space-y-2">
+          <Secao rotulo="Desta conversa">
+            <div className="space-y-2">
               {desteAtendimento.map((chamado) => (
-                <ItemDoChamado
+                <ChamadoEmDestaque
                   key={chamado.codigo}
                   chamado={chamado}
                   agora={agora}
                 />
               ))}
-            </ul>
-          </section>
+            </div>
+          </Secao>
         )}
 
         {outros.length > 0 && (
-          <section className="space-y-2">
-            <h3 className="text-xs font-medium tracking-wide text-tinta-fraca uppercase">
-              {desteAtendimento.length > 0 ? "Outros chamados" : "Chamados"}
-            </h3>
-            <ul className="space-y-2">
+          <Secao
+            rotulo={
+              desteAtendimento.length > 0 ? "Outros chamados" : "Chamados"
+            }
+          >
+            <ul className="divide-y divide-borda">
               {outros.map((chamado) => (
-                <ItemDoChamado
-                  key={chamado.codigo}
-                  chamado={chamado}
-                  agora={agora}
-                />
+                <ChamadoCompacto key={chamado.codigo} chamado={chamado} />
               ))}
             </ul>
-          </section>
+          </Secao>
         )}
       </div>
     </div>

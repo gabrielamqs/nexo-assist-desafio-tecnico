@@ -12,7 +12,7 @@ const POR_VARIANTE = {
   primario:
     "bg-primario-acao text-tinta-invertida hover:bg-primario-hover focus-visible:outline-primario disabled:bg-primario-acao/50",
   secundario:
-    "border border-borda bg-superficie text-tinta hover:border-primario/40 hover:bg-primario-suave hover:text-primario-texto focus-visible:outline-primario disabled:opacity-50",
+    "sombra-de-controle border border-borda-forte bg-superficie text-tinta hover:border-primario/40 hover:bg-primario-suave hover:text-primario-texto focus-visible:outline-primario disabled:opacity-50",
   fantasma:
     "text-tinta-media hover:bg-superficie-baixa hover:text-tinta focus-visible:outline-primario disabled:opacity-50",
 } as const;

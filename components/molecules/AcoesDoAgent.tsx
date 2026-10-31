@@ -20,10 +20,7 @@ export function AcoesDoAgent({ acoes, emAndamento = false }: Props) {
           className={`inline-flex items-center gap-1 ${acao.sucesso ? "text-tinta-fraca" : "text-critica-texto"}`}
         >
           {acao.sucesso ? (
-            <Check
-              className="h-3 w-3 text-resolvido-texto"
-              aria-hidden="true"
-            />
+            <Check className="h-3 w-3" aria-hidden="true" />
           ) : (
             <X className="h-3 w-3" aria-hidden="true" />
           )}
