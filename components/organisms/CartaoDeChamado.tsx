@@ -27,7 +27,7 @@ export function CartaoDeChamado({ chamado }: { chamado: DetalheDeChamado }) {
             {formatarTempoDecorrido(new Date(chamado.atualizadoEm), new Date())}
           </span>
           {chamado.vencido && (
-            <span className="block text-xs font-medium text-alta">
+            <span className="block text-xs font-medium text-alta-texto">
               prazo vencido
             </span>
           )}

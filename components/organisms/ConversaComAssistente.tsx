@@ -76,7 +76,7 @@ function ContadorDeMensagens({ enviadas }: { enviadas: number }) {
   const perto = enviadas >= MENSAGENS_PARA_AVISAR_DO_LIMITE;
   return (
     <p
-      className={`text-right text-xs ${perto ? "font-medium text-alta" : "text-tinta-fraca"}`}
+      className={`text-right text-xs ${perto ? "font-medium text-alta-texto" : "text-tinta-fraca"}`}
     >
       {enviadas}/{LIMITE_DE_MENSAGENS_POR_SESSAO} mensagens nesta sessão
     </p>

@@ -20,7 +20,7 @@ export function MedidorDeConfianca({ valor }: { valor: number }) {
         />
       </div>
       <span
-        className={`text-sm font-semibold tabular-nums ${suficiente ? "text-resolvido" : "text-alta"}`}
+        className={`text-sm font-semibold tabular-nums ${suficiente ? "text-resolvido-texto" : "text-alta-texto"}`}
       >
         {porcentagem}%
       </span>

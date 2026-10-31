@@ -70,7 +70,7 @@ export function CartaoDeRascunho({ proposta, acoes }: Props) {
               Cancelar
             </Botao>
             {acoes.erro !== null && (
-              <p role="alert" className="w-full text-sm text-critica">
+              <p role="alert" className="w-full text-sm text-critica-texto">
                 {acoes.erro}
               </p>
             )}

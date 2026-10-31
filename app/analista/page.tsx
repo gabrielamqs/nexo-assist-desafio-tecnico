@@ -108,7 +108,7 @@ export default async function PaginaDoAnalista({
 
           {atendimento.conversa.resumoParaAnalista !== null && (
             <div className="border-b border-borda bg-primario-suave px-4 py-3 sm:px-6">
-              <p className="text-xs font-medium tracking-wide text-primario uppercase">
+              <p className="text-xs font-medium tracking-wide text-primario-texto uppercase">
                 Resumo do caso
               </p>
               <p className="mt-1 text-sm text-tinta">

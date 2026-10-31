@@ -8,6 +8,7 @@ Este plano e o `stack-arquitetura.md` são um **resumo interpretado** das fontes
 
 - **PRD do desafio**: `../Documentacao/Desafio_Tecnico_Nexo_Assist_PRD_v5.pdf` — especificação completa (histórias de usuário, Anexo A: regras do service desk e prazos, Anexo B: formato dos dados de exemplo, critérios de avaliação).
 - **Protótipo visual (Anexo C)**: https://app.pen.dev/s/swhm7Xfy1krKDIc-QyqE9J8ZI2xFB0qbNvHIncCXcLg — referência de layout e estilo das 5+ telas. É um app client-side (carrega via JS): `WebFetch`/leitura direta de HTML não renderiza nada útil, é preciso abrir num navegador (Claude in Chrome ou navegador normal) para ver o conteúdo.
+- **Export do protótipo**: `nexo.pen` — o mesmo protótipo exportado como JSON, e a forma **preferida** de consultá-lo: traz a árvore completa das 6 telas com nome, tamanho, espaçamento, cor, fonte e texto de cada nó, além do dicionário de variáveis de design em `variables`. Ler com um script (`json.load`) e percorrer `children` recursivamente; não abrir o arquivo inteiro de uma vez (148 KB). As cores aparecem como `$nome` (referência a `variables`) ou hex literal.
 
 Se alguma decisão registrada aqui parecer conflitar com o PDF ou o protótipo na hora de implementar, a fonte original vence — e vale atualizar este plano para refletir isso.
 
@@ -104,7 +105,72 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] O que faria com mais tempo
 - [x] Escolha do modelo e segurança/privacidade (o PRD pede que a escolha do provedor seja explicada no README)
 
-## Etapa 12 — Deploy (diferencial)
+## Etapa 12 — Fidelidade ao protótipo (Anexo C)
+
+Etapa aberta depois da Etapa 11, quando o export `nexo.pen` chegou e permitiu comparar o frontend com o protótipo nó a nó, em vez de no olho. O que está aqui é diferença **medida** contra o export, não impressão.
+
+### 12.1 — Paleta e correções pontuais (feito)
+- [x] Tokens de `app/globals.css` alinhados aos `variables` do `.pen` (ver tabela abaixo)
+- [x] `Selo` passa a separar cor do ponto e cor do texto, como o protótipo faz (`$warning` no ponto, `$warning-text` no texto) — sem isso a paleta nova fica ilegível
+- [x] Ícone da marca trocado pelo path real do protótipo (`MarcaNexoAssist`), branco no painel escuro do login e azul na sidebar
+- [x] Login: traços verticais separando as três métricas; chip do INC-20517 branco com ponto âmbar, não vermelho
+- [x] Sidebar: item "Meu perfil", e "Sair" como linha (ícone + rótulo) **abaixo** do cartão do usuário
+- [x] Página `/perfil` criada (Tela 6 do protótipo), que é o destino do novo item da sidebar
+
+**Mapa de tokens** (`.pen` → nosso nome). O protótipo usa três variações por cor — base (ponto/borda), `-text` (texto sobre fundo claro) e `-soft` (fundo de pílula) — e essa divisão virou regra aqui:
+
+| `.pen` | nosso token | | `.pen` | nosso token |
+|---|---|---|---|---|
+| `primary` | `primario` | | `ink` | `tinta` |
+| `primary-hover` | `primario-hover` | | `ink-2` | `tinta-media` |
+| `cta` | `primario-acao` | | `ink-3` | `tinta-fraca` |
+| `primary-text` | `primario-texto` | | `rule` | `borda` |
+| `primary-soft` | `primario-suave` | | `paper` | `superficie` |
+| `danger` / `-text` / `-soft` | `critica` / `-texto` / `-suave` | | `desk` | `superficie-baixa` |
+| `warning` / `-text` / `-soft` | `alta` / `-texto` / `-suave` | | — | `media` (ponto cinza, `#1b243166`) |
+| `success` / `-text` / `-soft` | `resolvido` / `-texto` / `-suave` | | — | `baixa` (= `primary`) |
+
+`font-display` (Newsreader) aparece **só na tela de login** no protótipo — título, "Entrar" e os três números. Todo o resto é `font-ui` (Schibsted Grotesk). `font-data` (IBM Plex Mono) está declarado nas variáveis mas não é usado em nenhum nó.
+
+### 12.2 — Chat do funcionário (Telas 2 e 3)
+- [ ] Coluna de mensagens centralizada: o protótipo usa `padding [28, 200]`, ou seja ~1040 px de coluna útil, não a largura toda
+- [ ] Ícone de check das ações do agent em cinza (`$ink-3`), não verde — no protótipo o check é neutro, a cor fica por conta do erro
+- [ ] Opções rápidas com atalho numérico (1–4) e estado "escolhida" (`primary-soft` + borda `primary`)
+- [ ] Cartão de rascunho no formato do protótipo: raio 16, sombra dupla, "eyebrow" dentro do corpo (`Novo chamado · Rascunho D-381` + estado à direita), título 18 px, grade de 3 campos (Categoria / Prioridade / Afetados — sem "Tipo") sobre régua superior, e rodapé em `desk` com `Confirmar` trazendo a tecla `⌘↵`
+- [ ] Compositor como pílula de 48 px com o botão Enviar dentro, e o contador `18/30 mensagens nesta sessão` alinhado à direita abaixo
+- [ ] Código do chamado em `font-ui`, não `font-mono` (`SelecaoDeChamado`, `PainelDeChamados`)
+- [ ] Elevação dos cartões: raio 16 + borda `#1B243117` + duas sombras suaves — hoje é raio 12 sem sombra
+
+### 12.3 — Console do analista (Telas 4 e 5) — reestruturação
+A maior diferença estrutural do projeto. O protótipo não tem o cabeçalho de topo que temos hoje.
+- [ ] Trilha vertical de 64 px em `desk`: marca, ícone "Conversas" com contador de não lidas, e avatar do analista com ponto de online no rodapé
+- [ ] Cabeçalho da lista com título "Conversas" em `font-ui` (hoje está em Newsreader), seletor de disponibilidade ("Disponível") e campo de busca "Pesquisar conversa ou chamado"
+- [ ] Itens da fila: contador de não lidas, ponto de online no avatar, marca de leitura (ticks) na última mensagem do agent, estado "digitando…"
+- [ ] Avatar com cor por pessoa (o protótipo usa um tom por funcionário, não azul para todos)
+- [ ] Transcrição: hora e ticks dentro da bolha, etiqueta "IA" ao lado de "Nexo Assist", e o analista identificado por nome + equipe ("Rafael Lima · Suporte N2") em vez de "Analista de TI"
+- [ ] Separador de dia como pílula, não como linha
+- [ ] Painel de chamados: linha de último evento no chamado da conversa ("Transferido para um analista · 10:05"), outros chamados como linhas compactas com chevron, rodapé "Ver todos os chamados da Ana", e botão de fechar no cabeçalho
+
+### 12.4 — Tela de login
+- [ ] "Service desk de TI da Nexo" em caixa normal, 13,5 px, peso 500 — hoje está em caixa alta e menor
+- [ ] Números das métricas em 34 px (hoje 24 px)
+- [ ] Botão "Entrar" com as duas sombras do protótipo
+- [ ] Caixa de "Manter conectado" desenhada (18 px, raio 6, preenchida em `cta`) em vez do checkbox nativo
+- [ ] Marca do painel escuro em 24 px (hoje 20 px, igual à da sidebar)
+- [ ] Bolhas do exemplo com raio 12 e canto de 4 px no lado do remetente (hoje 16 px)
+
+### 12.5 — Meu perfil
+- [ ] "Redefinir senha" como botão de verdade (hoje é um rótulo inerte com nota de demonstração)
+
+### 12.6 — Divergências deliberadas (não corrigir)
+Registrado para não virar "bug" em revisão futura:
+- **"Como decidi"** (painel de transparência) não existe no protótipo — é exigência do PRD ("Visibilidade das decisões", p.2) e fica.
+- **Filtro "Encerradas"** na fila é nosso; o protótipo tem quatro filtros.
+- **"Esqueci minha senha"** virou "Qualquer senha é aceita nesta demonstração", porque não há recuperação de senha nesta demo.
+- **Departamento** no perfil não está no protótipo, mas é dado real do seed e ajuda o analista.
+- O ícone da marca é **cortado à direita** no protótipo (desenho de 24,388 px dentro de uma caixa de 24 px com clip). Reproduzido como está, de propósito.
+
+## Etapa 13 — Deploy (diferencial)
 - [ ] Deploy no Railway com volume persistente
 - [ ] Proteção de chaves / limite de uso
 - [ ] Documentar processo de deploy no README

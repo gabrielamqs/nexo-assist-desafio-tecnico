@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 
 const ESTILO_POR_TIPO = {
-  erro: "border-critica/20 bg-critica/5 text-critica",
-  atencao: "border-alta/20 bg-alta/5 text-alta",
-  informacao: "border-primario/20 bg-primario-suave text-primario",
+  erro: "border-critica/20 bg-critica-suave text-critica-texto",
+  atencao: "border-alta/20 bg-alta-suave text-alta-texto",
+  informacao: "border-primario/20 bg-primario-suave text-primario-texto",
 } as const;
 
 type Props = {

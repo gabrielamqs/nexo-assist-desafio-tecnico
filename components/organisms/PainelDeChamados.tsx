@@ -34,7 +34,7 @@ function ItemDoChamado({
         <span>{formatarTempoDecorrido(chamado.atualizadoEm, agora)}</span>
       </div>
       {chamado.vencido ? (
-        <p className="text-xs font-medium text-alta">
+        <p className="text-xs font-medium text-alta-texto">
           Prazo vencido em {formatarDataHoraCurta(chamado.prazoDeResposta)}
         </p>
       ) : (

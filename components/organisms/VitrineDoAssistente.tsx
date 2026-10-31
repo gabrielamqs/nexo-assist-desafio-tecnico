@@ -15,13 +15,13 @@ export function VitrineDoAssistente() {
       <MarcaNexoAssist tom="claro" />
 
       <div className="space-y-5">
-        <p className="text-xs font-medium tracking-wide text-tinta-fraca uppercase">
+        <p className="text-xs font-medium tracking-wide text-tinta-invertida-fraca uppercase">
           Service desk de TI da Nexo
         </p>
         <h1 className="font-serif text-4xl leading-tight text-balance xl:text-5xl">
           Seu problema de TI, resolvido em uma conversa.
         </h1>
-        <p className="max-w-md text-sm leading-relaxed text-tinta-fraca">
+        <p className="max-w-md text-sm leading-relaxed text-tinta-invertida-media">
           Descreva o que está acontecendo. O assistente consulta seus chamados,
           busca na central de ajuda e chama um analista quando precisa.
         </p>
@@ -31,7 +31,7 @@ export function VitrineDoAssistente() {
             Meu notebook não conecta na VPN. Erro 809.
           </p>
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tinta-fraca">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tinta-invertida-fraca">
             <span className="font-medium text-tinta-invertida">
               Nexo Assist
             </span>
@@ -43,23 +43,31 @@ export function VitrineDoAssistente() {
             ))}
           </div>
 
-          <p className="w-fit rounded-2xl rounded-bl-sm bg-superficie-escura px-3 py-2 text-sm">
+          <p className="w-fit rounded-2xl rounded-bl-sm bg-superficie-escura-mais-alta px-3 py-2 text-sm">
             Pronto: abri o chamado com prioridade alta. Um analista fala com
             você em até 4 h úteis.
           </p>
 
-          <p className="inline-flex items-center gap-2 rounded-full bg-alta/10 px-3 py-1 text-xs text-alta">
-            <span className="h-1.5 w-1.5 rounded-full bg-alta" />
-            INC-20517 · Rede e VPN · Alta · em até 4 h
+          <p className="inline-flex items-center gap-2 rounded-xl bg-superficie px-3 py-1.5 text-xs">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-alta"
+            />
+            <span className="font-semibold text-tinta">INC-20517</span>
+            <span className="text-tinta-fraca">
+              Rede e VPN · Alta · em até 4 h
+            </span>
           </p>
         </div>
       </div>
 
-      <dl className="grid grid-cols-3 gap-4 border-t border-borda-escura pt-5">
+      <dl className="grid grid-cols-3 divide-x divide-borda-escura border-t border-borda-escura pt-5">
         {NUMEROS.map(({ valor, legenda }) => (
-          <div key={legenda}>
+          <div key={legenda} className="px-5 first:pl-0 last:pr-0">
             <dt className="font-serif text-2xl">{valor}</dt>
-            <dd className="mt-1 text-xs text-tinta-fraca">{legenda}</dd>
+            <dd className="mt-1 text-xs text-tinta-invertida-fraca">
+              {legenda}
+            </dd>
           </div>
         ))}
       </dl>

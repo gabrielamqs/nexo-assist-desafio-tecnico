@@ -65,17 +65,17 @@ export function DetalhesDaDecisao({ decisao }: { decisao: DecisaoDoAgent }) {
               <li key={`${acao.tipo}-${indice}`} className="flex gap-2">
                 {acao.sucesso ? (
                   <Check
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-resolvido"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-resolvido-texto"
                     aria-label="feito"
                   />
                 ) : (
                   <X
-                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-critica"
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-critica-texto"
                     aria-label="falhou"
                   />
                 )}
                 <span>
-                  <span className={acao.sucesso ? "" : "text-critica"}>
+                  <span className={acao.sucesso ? "" : "text-critica-texto"}>
                     {acao.descricao}
                   </span>
                   {acao.detalhe !== undefined && (
@@ -102,7 +102,7 @@ export function DetalhesDaDecisao({ decisao }: { decisao: DecisaoDoAgent }) {
 
       {transferencia.recomendada && transferencia.motivo !== null && (
         <Item rotulo="Analista">
-          <span className="text-alta">
+          <span className="text-alta-texto">
             Recomendado:{" "}
             {ROTULO_DO_MOTIVO_DE_TRANSFERENCIA[transferencia.motivo]}.
           </span>

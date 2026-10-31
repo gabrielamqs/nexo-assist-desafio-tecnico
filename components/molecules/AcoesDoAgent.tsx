@@ -17,10 +17,13 @@ export function AcoesDoAgent({ acoes, emAndamento = false }: Props) {
       {acoes.map((acao, indice) => (
         <li
           key={`${acao.tipo}-${indice}`}
-          className={`inline-flex items-center gap-1 ${acao.sucesso ? "text-tinta-fraca" : "text-critica"}`}
+          className={`inline-flex items-center gap-1 ${acao.sucesso ? "text-tinta-fraca" : "text-critica-texto"}`}
         >
           {acao.sucesso ? (
-            <Check className="h-3 w-3 text-resolvido" aria-hidden="true" />
+            <Check
+              className="h-3 w-3 text-resolvido-texto"
+              aria-hidden="true"
+            />
           ) : (
             <X className="h-3 w-3" aria-hidden="true" />
           )}

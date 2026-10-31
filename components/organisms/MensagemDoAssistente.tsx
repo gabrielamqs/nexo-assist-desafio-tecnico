@@ -82,7 +82,7 @@ export function MensagemDoAssistente({
             aria-expanded={detalhesAbertos}
             aria-controls={idDosDetalhes}
             onClick={() => setDetalhesAbertos((aberto) => !aberto)}
-            className="inline-flex items-center gap-1 rounded text-xs font-medium text-primario hover:underline focus-visible:outline-2 focus-visible:outline-primario"
+            className="inline-flex items-center gap-1 rounded text-xs font-medium text-primario-texto hover:underline focus-visible:outline-2 focus-visible:outline-primario"
           >
             Como decidi
             <ChevronDown

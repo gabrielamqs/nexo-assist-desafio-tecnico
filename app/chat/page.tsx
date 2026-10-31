@@ -1,4 +1,5 @@
 import { carregarConversa } from "@/application/usecases/carregar-conversa";
+import { SeloDoAtendimento } from "@/components/atoms/Selo";
 import { ConversaComAssistente } from "@/components/organisms/ConversaComAssistente";
 import { LayoutDoAtendimento } from "@/components/templates/LayoutDoAtendimento";
 import { repositorioDeConversas } from "@/infrastructure/dependencias";
@@ -17,7 +18,8 @@ export default async function PaginaDoChat() {
   return (
     <LayoutDoAtendimento
       usuario={funcionario}
-      estadoDaConversa={conversa?.estado ?? null}
+      secao="Atendimento"
+      selo={<SeloDoAtendimento estado={conversa?.estado ?? null} />}
     >
       <ConversaComAssistente
         key={`${funcionario.id}:${conversa?.id ?? "nova"}`}

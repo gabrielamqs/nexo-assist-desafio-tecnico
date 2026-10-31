@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { MarcaNexoAssist } from "@/components/atoms/MarcaNexoAssist";
+import { BotaoDeSair } from "@/components/molecules/BotaoDeSair";
 import { CartaoDoUsuario } from "@/components/molecules/CartaoDoUsuario";
 import type { Usuario } from "@/domain/types";
 
@@ -18,8 +19,11 @@ export function LayoutDoConsole({ analista, fila, painel, children }: Props) {
         <span className="hidden text-sm text-tinta-media sm:block">
           Console do analista
         </span>
-        <div className="w-64">
-          <CartaoDoUsuario usuario={analista} />
+        <div className="flex items-center gap-1">
+          <div className="w-56">
+            <CartaoDoUsuario usuario={analista} />
+          </div>
+          <BotaoDeSair apenasIcone />
         </div>
       </header>
 

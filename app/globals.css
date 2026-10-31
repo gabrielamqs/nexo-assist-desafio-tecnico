@@ -4,31 +4,43 @@
   --font-sans: var(--fonte-texto), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--fonte-titulo), ui-serif, Georgia, serif;
 
-  --color-primario: #2563eb;
-  --color-primario-escuro: #1d4ed8;
-  --color-primario-suave: #eff6ff;
+  --color-primario: #0285f7;
+  --color-primario-hover: #0071d6;
+  --color-primario-acao: #0062c4;
+  --color-primario-texto: #0069c7;
+  --color-primario-suave: #0285f712;
 
   --color-superficie: #ffffff;
-  --color-superficie-baixa: #f8fafc;
-  --color-superficie-escura: #0b1220;
-  --color-superficie-escura-alta: #162133;
+  --color-superficie-baixa: #f6f7f9;
+  --color-superficie-escura: #1b2431;
+  --color-superficie-escura-alta: #ffffff0a;
+  --color-superficie-escura-mais-alta: #ffffff14;
 
-  --color-tinta: #0f172a;
-  --color-tinta-media: #475569;
-  --color-tinta-fraca: #94a3b8;
+  --color-tinta: #1b2431;
+  --color-tinta-media: #3d4656;
+  --color-tinta-fraca: #5b6472;
   --color-tinta-invertida: #ffffff;
+  --color-tinta-invertida-media: #ffffffa6;
+  --color-tinta-invertida-fraca: #ffffff8c;
 
-  --color-borda: #e2e8f0;
-  --color-borda-escura: #24324b;
+  --color-borda: #e6e8ec;
+  --color-borda-forte: #1b24311f;
+  --color-borda-escura: #ffffff1a;
 
   --largura-da-fila: 20rem;
   --largura-do-painel: 22rem;
 
-  --color-critica: #dc2626;
-  --color-alta: #ea580c;
-  --color-media: #ca8a04;
-  --color-baixa: #0284c7;
-  --color-resolvido: #059669;
+  --color-critica: #ee343b;
+  --color-critica-texto: #c4161d;
+  --color-critica-suave: #ee343b12;
+  --color-alta: #f5a500;
+  --color-alta-texto: #946300;
+  --color-alta-suave: #f5a50018;
+  --color-media: #1b243166;
+  --color-baixa: #0285f7;
+  --color-resolvido: #00bd6c;
+  --color-resolvido-texto: #00804a;
+  --color-resolvido-suave: #00bd6c14;
 }
 
 body {

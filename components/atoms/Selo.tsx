@@ -14,13 +14,13 @@ export type TomDoSelo =
   "critica" | "alta" | "media" | "baixa" | "resolvido" | "primario" | "neutro";
 
 const TEXTO_POR_TOM: Record<TomDoSelo, string> = {
-  critica: "text-critica",
-  alta: "text-alta",
-  media: "text-media",
-  baixa: "text-baixa",
-  resolvido: "text-resolvido",
-  primario: "text-primario",
-  neutro: "text-tinta-media",
+  critica: "text-critica-texto",
+  alta: "text-alta-texto",
+  media: "text-tinta-media",
+  baixa: "text-primario-texto",
+  resolvido: "text-resolvido-texto",
+  primario: "text-primario-texto",
+  neutro: "text-tinta-fraca",
 };
 
 const PONTO_POR_TOM: Record<TomDoSelo, string> = {
@@ -34,13 +34,13 @@ const PONTO_POR_TOM: Record<TomDoSelo, string> = {
 };
 
 const FUNDO_POR_TOM: Record<TomDoSelo, string> = {
-  critica: "border-critica/20 bg-critica/10",
-  alta: "border-alta/20 bg-alta/10",
-  media: "border-media/20 bg-media/10",
-  baixa: "border-baixa/20 bg-baixa/10",
-  resolvido: "border-resolvido/20 bg-resolvido/10",
-  primario: "border-primario/20 bg-primario-suave",
-  neutro: "border-borda bg-superficie-baixa",
+  critica: "bg-critica-suave",
+  alta: "bg-alta-suave",
+  media: "bg-superficie-baixa",
+  baixa: "bg-primario-suave",
+  resolvido: "bg-resolvido-suave",
+  primario: "bg-primario-suave",
+  neutro: "bg-superficie-baixa",
 };
 
 type Props = {
@@ -51,9 +51,7 @@ type Props = {
 
 export function Selo({ tom, forma = "ponto", children }: Props) {
   const formato =
-    forma === "pilula"
-      ? `rounded-full border px-2 py-0.5 ${FUNDO_POR_TOM[tom]}`
-      : "";
+    forma === "pilula" ? `rounded-full px-2.5 py-1 ${FUNDO_POR_TOM[tom]}` : "";
 
   return (
     <span
@@ -112,4 +110,19 @@ export function SeloDeEstadoDaConversa({
       {ROTULO_DO_ESTADO_DA_CONVERSA[estado]}
     </Selo>
   );
+}
+
+export function SeloDoAtendimento({
+  estado,
+}: {
+  estado: EstadoDaConversa | null;
+}) {
+  if (estado === null || estado === "com_agent") {
+    return (
+      <Selo tom="resolvido" forma="pilula">
+        Assistente online
+      </Selo>
+    );
+  }
+  return <SeloDeEstadoDaConversa estado={estado} />;
 }

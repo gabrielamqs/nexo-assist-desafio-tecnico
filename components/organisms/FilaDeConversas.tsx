@@ -62,7 +62,7 @@ export function FilaDeConversas({
                 aria-current={ativo ? "page" : undefined}
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   ativo
-                    ? "bg-primario text-tinta-invertida"
+                    ? "bg-primario-acao text-tinta-invertida"
                     : "text-tinta-media hover:bg-superficie"
                 }`}
               >

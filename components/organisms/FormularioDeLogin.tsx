@@ -74,7 +74,7 @@ export function FormularioDeLogin({
           type="checkbox"
           name="manterConectado"
           defaultChecked
-          className="h-4 w-4 rounded border-borda text-primario focus-visible:outline-2 focus-visible:outline-primario"
+          className="h-4 w-4 rounded border-borda text-primario-texto focus-visible:outline-2 focus-visible:outline-primario"
         />
         Manter conectado neste computador
       </label>

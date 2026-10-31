@@ -19,7 +19,9 @@ export default async function PaginaDeLogin() {
       <div className="flex items-center justify-end p-6 text-sm text-tinta-media">
         <span>
           Problema para entrar?{" "}
-          <span className="font-medium text-primario">Ligue no ramal 4000</span>
+          <span className="font-medium text-primario-texto">
+            Ligue no ramal 4000
+          </span>
         </span>
       </div>
 
