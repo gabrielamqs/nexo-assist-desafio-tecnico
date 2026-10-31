@@ -67,11 +67,16 @@ export function criarRepositorioDeConversas({
       return recentes.reverse();
     },
 
-    async contarMensagens(conversaId) {
+    async contarMensagens(conversaId, autor) {
       const [linha] = await banco
         .select({ total: count() })
         .from(mensagens)
-        .where(eq(mensagens.conversaId, conversaId));
+        .where(
+          and(
+            eq(mensagens.conversaId, conversaId),
+            autor === undefined ? undefined : eq(mensagens.autor, autor),
+          ),
+        );
       return linha?.total ?? 0;
     },
 

@@ -46,3 +46,33 @@ export function formatarPrazoDeResposta(prazo: Date, agora: Date): string {
 
   return `em ${formatoDoDiaEMes.format(prazo)} às ${horario}`;
 }
+
+const formatoDiaCurto = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: FUSO_HORARIO,
+  day: "2-digit",
+  month: "short",
+});
+
+export const formatarHora = (data: Date) => formatoDaHora.format(data);
+
+export function formatarDiaCurto(data: Date): string {
+  const partes = formatoDiaCurto.formatToParts(data);
+  const dia = partes.find((parte) => parte.type === "day")?.value ?? "";
+  const mes = partes.find((parte) => parte.type === "month")?.value ?? "";
+  return `${dia} ${mes.replace(".", "")}`;
+}
+
+export const formatarDataHoraCurta = (data: Date) =>
+  `${formatarDiaCurto(data)}, ${formatarHora(data)}`;
+
+export function formatarTempoDecorrido(desde: Date, agora: Date): string {
+  const minutos = Math.floor((agora.getTime() - desde.getTime()) / 60_000);
+  if (minutos < 1) return "agora";
+  if (minutos < 60) return `há ${minutos} min`;
+
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `há ${horas} h`;
+
+  const dias = Math.floor(horas / 24);
+  return dias === 1 ? "há 1 dia" : `há ${dias} dias`;
+}

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   criarFerramentasDoAssistente,
   decidirAtualizacao,
+  foiDitoPeloFuncionario,
   montarPropostaDeChamado,
 } from "@/agent/ferramentas";
 import type { ServicoDeChamadosRemoto } from "@/agent/servico-remoto";
@@ -10,18 +11,30 @@ import { criarServicoEmMemoria } from "./servico-em-memoria";
 
 const AGORA = new Date("2026-03-09T14:00:00-03:00");
 
+const FALAS_DA_ANA = [
+  "Meu notebook não conecta na VPN desde ontem, aparece o erro 809.",
+  "Só eu. Tenho reunião com um cliente às 14h e preciso da VPN.",
+];
+
+const RASCUNHO_DA_VPN = {
+  tipo: "incidente",
+  titulo: "VPN não conecta — erro 809",
+  descricao: "Notebook com Windows 11 mostra erro 809 desde ontem.",
+  categoria: "Rede e VPN",
+} as const;
+
 describe("montarPropostaDeChamado", () => {
   it("calcula a prioridade pela tabela do Anexo A, não pelo modelo", () => {
     const resultado = montarPropostaDeChamado(
       {
-        tipo: "incidente",
-        titulo: "VPN não conecta — erro 809",
-        descricao: "Notebook com Windows 11 mostra erro 809 desde ontem.",
-        categoria: "Rede e VPN",
+        ...RASCUNHO_DA_VPN,
         afetados: "pessoa",
+        evidenciaDosAfetados: "Só eu",
         urgencia: "compromisso_no_dia",
+        evidenciaDaUrgencia: "Tenho reunião com um cliente às 14h",
       },
       AGORA,
+      FALAS_DA_ANA,
     );
 
     expect(resultado).toEqual({
@@ -35,30 +48,83 @@ describe("montarPropostaDeChamado", () => {
     const resultado = montarPropostaDeChamado(
       { tipo: "incidente", titulo: "VPN não conecta" },
       AGORA,
+      FALAS_DA_ANA,
     );
 
-    expect(resultado).toEqual({
+    expect(resultado).toMatchObject({
       completo: false,
       camposFaltando: ["descricao", "categoria", "afetados", "urgencia"],
     });
   });
 
-  it("pede a urgência quando já sabe quem é afetado", () => {
+  it("descarta quem é afetado e a urgência que a pessoa não disse", () => {
     const resultado = montarPropostaDeChamado(
       {
         tipo: "incidente",
-        titulo: "Impressora sem conexão",
-        descricao: "A impressora do 3º andar sumiu da rede.",
+        titulo: "Impressora parou",
+        descricao: "A impressora do andar parou de imprimir.",
         categoria: "Hardware",
         afetados: "equipe",
+        evidenciaDosAfetados: "afeta toda a equipe",
+        urgencia: "trabalho_parado",
+        evidenciaDaUrgencia: "ninguém consegue trabalhar",
       },
       AGORA,
+      ["A impressora do meu andar parou de imprimir desde hoje cedo"],
     );
 
     expect(resultado).toEqual({
       completo: false,
-      camposFaltando: ["urgencia"],
+      camposFaltando: ["afetados", "urgencia"],
+      orientacao: expect.stringContaining("Pergunte à pessoa"),
     });
+  });
+
+  it("descarta quando o modelo nem informa de onde tirou", () => {
+    const resultado = montarPropostaDeChamado(
+      {
+        ...RASCUNHO_DA_VPN,
+        afetados: "pessoa",
+        urgencia: "compromisso_no_dia",
+      },
+      AGORA,
+      FALAS_DA_ANA,
+    );
+
+    expect(resultado).toMatchObject({
+      completo: false,
+      camposFaltando: ["afetados", "urgencia"],
+    });
+  });
+
+  it("aceita a resposta rápida como evidência", () => {
+    const resultado = montarPropostaDeChamado(
+      {
+        ...RASCUNHO_DA_VPN,
+        afetados: "equipe",
+        evidenciaDosAfetados: "Minha equipe",
+        urgencia: "ha_alternativa",
+        evidenciaDaUrgencia: "dá para usar a do outro andar",
+      },
+      AGORA,
+      ["Minha equipe", "Dá para usar a do outro andar por enquanto"],
+    );
+
+    expect(resultado).toMatchObject({
+      completo: true,
+      rascunho: { prioridade: "media", afetados: "equipe" },
+    });
+  });
+});
+
+describe("foiDitoPeloFuncionario", () => {
+  it("ignora acentos, caixa e pontuação", () => {
+    expect(foiDitoPeloFuncionario("so eu", ["Só eu!"])).toBe(true);
+  });
+
+  it("recusa trecho vazio ou ausente", () => {
+    expect(foiDitoPeloFuncionario("  ", ["Só eu"])).toBe(false);
+    expect(foiDitoPeloFuncionario(undefined, ["Só eu"])).toBe(false);
   });
 });
 
@@ -107,6 +173,7 @@ describe("ferramentas do assistente", () => {
   const ferramentasDa = (funcionarioId: string, servicoUsado = servico) =>
     criarFerramentasDoAssistente({
       funcionarioId,
+      falasDoFuncionario: [],
       servico: servicoUsado,
       agora: AGORA,
       registrar: (chamada) => chamadas.push(chamada),

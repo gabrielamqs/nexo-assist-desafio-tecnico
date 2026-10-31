@@ -19,7 +19,7 @@ export const INSTRUCOES_DA_SAIDA = `Depois de usar as ferramentas que precisar, 
 - "entendimento": o que a pessoa quer, em uma frase;
 - "intencao": uma de ${INTENCOES.map((intencao) => `"${intencao}"`).join(", ")};
 - "confianca": número de 0 a 1;
-- "justificativa": por que essa ação, citando a regra ou o dado usado;
+- "justificativa": por que essa ação, citando a regra ou o dado usado, em palavras simples e sem nomes de ferramentas;
 - "opcoesRapidas": até ${MAXIMO_DE_OPCOES_RAPIDAS} respostas curtas que a pessoa pode tocar, ou lista vazia.`;
 
 export const normalizarSaida = (saida: SaidaEstruturada): SaidaEstruturada => ({

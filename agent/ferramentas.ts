@@ -22,6 +22,7 @@ import {
   type TipoDeChamado,
   type Urgencia,
 } from "@/domain/types";
+import { paraComparacao } from "@/lib/texto";
 import { mensagemDoErro, type ServicoDeChamadosRemoto } from "./servico-remoto";
 
 export type EntradaDaPropostaDeChamado = {
@@ -30,19 +31,59 @@ export type EntradaDaPropostaDeChamado = {
   descricao?: string;
   categoria?: Categoria;
   afetados?: Impacto;
+  evidenciaDosAfetados?: string;
   urgencia?: Urgencia;
+  evidenciaDaUrgencia?: string;
 };
 
+export const ORIENTACAO_PARA_CAMPOS_FALTANDO =
+  "Pergunte à pessoa pelos campos que faltam, um por vez. Quem é afetado e a urgência só valem com um trecho do que a própria pessoa escreveu.";
+
+export function foiDitoPeloFuncionario(
+  evidencia: string | undefined,
+  falasDoFuncionario: string[],
+): boolean {
+  if (evidencia === undefined) return false;
+  const trecho = paraComparacao(evidencia);
+  return (
+    trecho !== "" &&
+    falasDoFuncionario.some((fala) => paraComparacao(fala).includes(trecho))
+  );
+}
+
 export function montarPropostaDeChamado(
-  { urgencia, ...campos }: EntradaDaPropostaDeChamado,
+  {
+    afetados,
+    evidenciaDosAfetados,
+    urgencia,
+    evidenciaDaUrgencia,
+    ...campos
+  }: EntradaDaPropostaDeChamado,
   agora: Date,
+  falasDoFuncionario: string[],
 ): ResultadoDaPropostaDeChamado {
+  const afetadosComprovados = foiDitoPeloFuncionario(
+    evidenciaDosAfetados,
+    falasDoFuncionario,
+  )
+    ? afetados
+    : undefined;
+  const urgenciaComprovada = foiDitoPeloFuncionario(
+    evidenciaDaUrgencia,
+    falasDoFuncionario,
+  )
+    ? urgencia
+    : undefined;
+
   const prioridade =
-    campos.afetados !== undefined && urgencia !== undefined
-      ? definirPrioridade({ impacto: campos.afetados, urgencia })
+    afetadosComprovados !== undefined && urgenciaComprovada !== undefined
+      ? definirPrioridade({
+          impacto: afetadosComprovados,
+          urgencia: urgenciaComprovada,
+        })
       : undefined;
 
-  const rascunho = { ...campos, prioridade };
+  const rascunho = { ...campos, afetados: afetadosComprovados, prioridade };
 
   if (!rascunhoEstaCompleto(rascunho)) {
     const validacao = validarRascunho(rascunho);
@@ -53,7 +94,8 @@ export function montarPropostaDeChamado(
     return {
       completo: false,
       camposFaltando:
-        urgencia === undefined ? [...faltando, "urgencia"] : faltando,
+        urgenciaComprovada === undefined ? [...faltando, "urgencia"] : faltando,
+      orientacao: ORIENTACAO_PARA_CAMPOS_FALTANDO,
     };
   }
 
@@ -90,6 +132,7 @@ export function decidirAtualizacao(
 
 export type OpcoesDasFerramentas = {
   funcionarioId: string;
+  falasDoFuncionario: string[];
   servico: ServicoDeChamadosRemoto;
   agora: Date;
   registrar: (chamada: ChamadaDeFerramenta) => void;
@@ -101,6 +144,7 @@ const codigoDoChamado = z
 
 export function criarFerramentasDoAssistente({
   funcionarioId,
+  falasDoFuncionario,
   servico,
   agora,
   registrar,
@@ -187,18 +231,30 @@ export function criarFerramentasDoAssistente({
         .enum(IMPACTOS)
         .optional()
         .describe(
-          "Quem é afetado: pessoa (só a pessoa), equipe, empresa, ou desconhecido se ela não souber.",
+          "Quem é afetado: pessoa (só a pessoa), equipe (outras pessoas também não conseguem), empresa, ou desconhecido se ela disse que não sabe. O lugar onde o problema acontece não diz quem é afetado.",
+        ),
+      evidenciaDosAfetados: z
+        .string()
+        .optional()
+        .describe(
+          "Trecho copiado literalmente do que a pessoa escreveu e que diz quem é afetado, como 'Só eu' ou 'ninguém da equipe consegue'. Sem esse trecho, afetados é ignorado.",
         ),
       urgencia: z
         .enum(URGENCIAS)
         .optional()
         .describe(
-          "trabalho_parado (não consegue trabalhar), compromisso_no_dia (compromisso de hoje em risco), ha_alternativa (atrapalha mas dá para contornar) ou sem_urgencia (pedido ou melhoria).",
+          "trabalho_parado (a pessoa disse que não consegue trabalhar), compromisso_no_dia (disse que tem compromisso hoje em risco), ha_alternativa (atrapalha mas dá para contornar) ou sem_urgencia (pedido ou melhoria).",
+        ),
+      evidenciaDaUrgencia: z
+        .string()
+        .optional()
+        .describe(
+          "Trecho copiado literalmente do que a pessoa escreveu e que mostra a urgência, como 'tenho reunião às 14h'. Sem esse trecho, urgencia é ignorada.",
         ),
     }),
     execute: async (entrada) =>
       executar(FERRAMENTA.proporChamado, entrada, async () =>
-        montarPropostaDeChamado(entrada, agora),
+        montarPropostaDeChamado(entrada, agora, falasDoFuncionario),
       ),
   });
 

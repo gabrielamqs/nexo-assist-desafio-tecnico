@@ -49,7 +49,9 @@ describe("assistente com o loop do Mastra", () => {
           descricao: "Desde ontem o notebook com Windows 11 mostra erro 809.",
           categoria: "Rede e VPN",
           afetados: "pessoa",
+          evidenciaDosAfetados: "só eu",
           urgencia: "compromisso_no_dia",
+          evidenciaDaUrgencia: "tenho reunião hoje às 14h",
         },
       },
       { tipo: "texto", partes: respostaEmJson(RESPOSTA_FINAL) },
@@ -62,7 +64,9 @@ describe("assistente com o loop do Mastra", () => {
       {
         funcionario: ana,
         historico: [
-          mensagemDaAna("Meu notebook não conecta na VPN, erro 809."),
+          mensagemDaAna(
+            "Meu notebook não conecta na VPN, erro 809. Só eu, e tenho reunião hoje às 14h.",
+          ),
         ],
         agora: AGORA,
       },

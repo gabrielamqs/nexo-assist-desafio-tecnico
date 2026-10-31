@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { autenticar } from "@/application/usecases/autenticar";
 import { prepararBancoDeDados } from "@/infrastructure/db/client";
 import { repositorioDeUsuarios } from "@/infrastructure/dependencias";
-import { ROTA_DE_LOGIN, rotaInicialPara } from "@/lib/rotas";
-import { abrirSessao, encerrarSessao } from "@/lib/sessao-servidor";
+import { rotaInicialPara } from "@/lib/rotas";
+import { abrirSessao } from "@/lib/sessao-servidor";
 import type { EstadoDoLogin } from "./estado";
 
 const MENSAGEM_POR_MOTIVO = {
@@ -32,9 +32,4 @@ export async function entrar(
 
   await abrirSessao(resultado.usuario, dados.get("manterConectado") === "on");
   redirect(rotaInicialPara(resultado.usuario.papel));
-}
-
-export async function sair() {
-  await encerrarSessao();
-  redirect(ROTA_DE_LOGIN);
 }

@@ -66,13 +66,13 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Prompt / regras do Anexo A injetadas no system prompt
 - [x] Structured output: decisão + confiança + justificativa
 - [x] Casos de uso (`application/usecases`) orquestrando domain + ports
-- [ ] Teste de ponta a ponta com o Gemini real (`npm run conversar`) — pendente da `GEMINI_API_KEY`; o loop já está coberto por testes com modelo roteirizado
+- [x] Teste de ponta a ponta com o Gemini real (`npm run conversar` e pela tela)
 
 ## Etapa 6 — Chat do funcionário (UI)
-- [ ] Telas 2 e 3 — **ver protótipo** para layout/comportamento esperado; rascunho só confirma após aprovação do funcionário (regra de abertura, Anexo A)
-- [ ] Streaming de resposta em tempo real
-- [ ] Limite de 30 mensagens/sessão (exigido no PRD, "O que construir" p.2); comportamento no limite é decisão própria — ver `stack-arquitetura.md`
-- [ ] Painel de transparência — requisito "Visibilidade das decisões", PRD p.2 ("a parte mais importante do desafio"); formato (expandir ações / painel lateral / log) é decisão própria
+- [x] Telas 2 e 3 — **ver protótipo** para layout/comportamento esperado; rascunho só confirma após aprovação do funcionário (regra de abertura, Anexo A)
+- [x] Streaming de resposta em tempo real
+- [x] Limite de 30 mensagens/sessão (exigido no PRD, "O que construir" p.2); comportamento no limite é decisão própria — ver `stack-arquitetura.md`
+- [x] Painel de transparência — requisito "Visibilidade das decisões", PRD p.2 ("a parte mais importante do desafio"); formato (expandir ações / painel lateral / log) é decisão própria
 
 ## Etapa 7 — Transferência para analista
 - [ ] Condições de transferência — **ver PDF, Anexo A, item "Transferência" (p.4)** para os gatilhos obrigatórios; limiar de confiança como fallback é decisão própria
@@ -85,7 +85,7 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [ ] Painel lateral com chamados do funcionário (privacidade: só os do funcionário da conversa — regra do Anexo A)
 
 ## Etapa 9 — Qualidade das decisões
-- [ ] Conjunto de casos de avaliação (eval set) do agent — mensagens de exemplo + resultado esperado, cobrindo os critérios de **"Qualidade das decisões" e "Condução da conversa", PRD p.3 ("Como vamos avaliar")**
+- [ ] Conjunto de casos de avaliação (eval set) do agent. Casos já observados no teste real da Etapa 6, a incluir: "a impressora do meu andar parou" vira equipe + trabalho parado (prioridade crítica) sem perguntar; depois de "Só eu", a urgência sai como "trabalho parado" sem ninguém ter perguntado; respostas erradas anteriores no histórico fazem o modelo repetir o erro na mesma conversa — mensagens de exemplo + resultado esperado, cobrindo os critérios de **"Qualidade das decisões" e "Condução da conversa", PRD p.3 ("Como vamos avaliar")**
 - [ ] Rodar eval como teste automatizado
 - [ ] Ajustar limiar de confiança / prompt conforme resultado
 

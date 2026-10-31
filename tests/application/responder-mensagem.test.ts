@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AssistenteIndisponivelError } from "@/application/ports/assistente";
 import type { RepositorioDeConversas } from "@/application/ports/conversas";
+import { carregarConversa } from "@/application/usecases/carregar-conversa";
 import {
+  LimiteDeMensagensAtingidoError,
   MensagemVaziaError,
   responderMensagem,
 } from "@/application/usecases/responder-mensagem";
+import { LIMITE_DE_MENSAGENS_POR_SESSAO } from "@/domain/types";
 import { USUARIOS_DE_EXEMPLO } from "@/infrastructure/db/dados-exemplo";
 import { conversas as tabelaDeConversas } from "@/infrastructure/db/schema";
 import type { BancoDeDados } from "@/infrastructure/db/client";
@@ -198,5 +201,74 @@ describe("responderMensagem", () => {
         { funcionario: ana, texto: "   " },
       ),
     ).rejects.toBeInstanceOf(MensagemVaziaError);
+  });
+
+  it("bloqueia no servidor a mensagem acima do limite, sem chamar o modelo", async () => {
+    const { assistente, recebidas } = criarAssistenteFalso();
+    const dependencias = { conversas, assistente, agora: () => AGORA };
+
+    for (
+      let enviada = 0;
+      enviada < LIMITE_DE_MENSAGENS_POR_SESSAO;
+      enviada += 1
+    ) {
+      await responderMensagem(dependencias, { funcionario: ana, texto: "Oi" });
+    }
+
+    await expect(
+      responderMensagem(dependencias, { funcionario: ana, texto: "Mais uma" }),
+    ).rejects.toBeInstanceOf(LimiteDeMensagensAtingidoError);
+    expect(recebidas).toHaveLength(LIMITE_DE_MENSAGENS_POR_SESSAO);
+  });
+
+  it("recomenda transferir na última mensagem permitida", async () => {
+    const { assistente } = criarAssistenteFalso();
+    const dependencias = { conversas, assistente, agora: () => AGORA };
+
+    const respostas = [];
+    for (
+      let enviada = 0;
+      enviada < LIMITE_DE_MENSAGENS_POR_SESSAO;
+      enviada += 1
+    ) {
+      respostas.push(
+        await responderMensagem(dependencias, {
+          funcionario: ana,
+          texto: "Oi",
+        }),
+      );
+    }
+
+    const ultima = respostas.at(-1);
+    expect(
+      ultima?.situacao === "respondida" &&
+        ultima.resposta.decisao?.transferencia,
+    ).toEqual({ recomendada: true, motivo: "limite_de_mensagens" });
+  });
+});
+
+describe("carregarConversa", () => {
+  it("devolve vazio quando o funcionário ainda não conversou", async () => {
+    await expect(carregarConversa({ conversas }, ana)).resolves.toEqual({
+      conversa: null,
+      mensagens: [],
+      mensagensEnviadas: 0,
+    });
+  });
+
+  it("devolve o histórico para continuar de onde parou", async () => {
+    const { assistente } = criarAssistenteFalso();
+    await responderMensagem(
+      { conversas, assistente, agora: () => AGORA },
+      { funcionario: ana, texto: "Oi" },
+    );
+
+    const carregada = await carregarConversa({ conversas }, ana);
+
+    expect(carregada.mensagens.map((mensagem) => mensagem.autor)).toEqual([
+      "funcionario",
+      "agent",
+    ]);
+    expect(carregada.mensagensEnviadas).toBe(1);
   });
 });

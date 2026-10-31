@@ -1,5 +1,4 @@
 import { LogOut } from "lucide-react";
-import { sair } from "@/app/login/acoes";
 import { Botao } from "@/components/atoms/Botao";
 import type { Usuario } from "@/domain/types";
 
@@ -23,7 +22,7 @@ export function CartaoDoUsuario({ usuario }: { usuario: Usuario }) {
         </p>
         <p className="truncate text-xs text-tinta-fraca">{usuario.email}</p>
       </div>
-      <form action={sair}>
+      <form action="/sair" method="post">
         <Botao variante="fantasma" type="submit" className="px-2">
           <LogOut className="h-4 w-4" aria-hidden="true" />
           <span className="sr-only">Sair</span>

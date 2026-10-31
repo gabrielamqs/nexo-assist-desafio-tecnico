@@ -34,11 +34,6 @@ export async function abrirSessao(usuario: Usuario, manterConectado = false) {
   );
 }
 
-export async function encerrarSessao() {
-  const armazem = await cookies();
-  armazem.delete(NOME_DO_COOKIE_DE_SESSAO);
-}
-
 export async function sessaoAtual(): Promise<Sessao | null> {
   await connection();
   const armazem = await cookies();

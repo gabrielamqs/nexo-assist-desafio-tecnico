@@ -132,7 +132,22 @@ export type AcaoDoAgent = {
   tipo: TipoDeAcaoDoAgent;
   descricao: string;
   sucesso: boolean;
+  detalhe?: string;
 };
+
+export type ResumoDeChamado = Pick<
+  Chamado,
+  "codigo" | "tipo" | "titulo" | "categoria" | "prioridade" | "status"
+> & {
+  abertoEm: string;
+  atualizadoEm: string;
+  prazoDeResposta: string;
+  vencido: boolean;
+};
+
+export type DetalheDeChamado = ResumoDeChamado & { descricao: string };
+
+export type ArtigoConsultado = Pick<ArtigoDaCentralDeAjuda, "id" | "titulo">;
 
 export const INTENCOES = [
   "tirar_duvida",
@@ -179,6 +194,9 @@ export type DecisaoDoAgent = {
   opcoesRapidas: string[];
   proposta: PropostaRegistrada | null;
   transferencia: AvaliacaoDeTransferencia;
+  chamadosListados: ResumoDeChamado[];
+  chamadoConsultado: DetalheDeChamado | null;
+  artigosConsultados: ArtigoConsultado[];
 };
 
 export type Mensagem = {

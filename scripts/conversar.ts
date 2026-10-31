@@ -1,4 +1,4 @@
-import { createInterface } from "node:readline/promises";
+import { createInterface } from "node:readline";
 import {
   cancelarProposta,
   confirmarProposta,
@@ -60,15 +60,13 @@ async function main() {
   if (funcionario === null) throw new Error(`Usuário ${email} não encontrado.`);
 
   console.log(`Conversando como ${funcionario.nome}. ${AJUDA}\n`);
-  const terminal = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
+  const terminal = createInterface({ input: process.stdin });
 
-  while (true) {
-    const texto = (await terminal.question("\nVocê: ")).trim();
+  for await (const linha of terminal) {
+    const texto = linha.trim();
     if (texto === "/sair") break;
     if (texto === "") continue;
+    console.log(`\nVocê: ${texto}`);
 
     if (texto === "/confirmar" || texto === "/cancelar") {
       const pendente = await mensagemComPropostaPendente(funcionario);

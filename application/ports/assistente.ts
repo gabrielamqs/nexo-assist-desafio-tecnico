@@ -24,7 +24,7 @@ export type ChamadaDeFerramenta = {
 };
 
 export type ResultadoDaPropostaDeChamado =
-  | { completo: false; camposFaltando: string[] }
+  | { completo: false; camposFaltando: string[]; orientacao: string }
   | { completo: true; rascunho: RascunhoCompleto; prazoDeResposta: string };
 
 export type ResultadoDaPropostaDeAtualizacao =

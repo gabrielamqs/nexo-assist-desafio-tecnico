@@ -4,6 +4,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useActionState, useState } from "react";
 import { entrar } from "@/app/login/acoes";
 import { ESTADO_INICIAL_DO_LOGIN } from "@/app/login/estado";
+import { Aviso } from "@/components/atoms/Aviso";
 import { Botao } from "@/components/atoms/Botao";
 import { CampoDeTexto } from "@/components/atoms/CampoDeTexto";
 import { CampoDeFormulario } from "@/components/molecules/CampoDeFormulario";
@@ -78,14 +79,7 @@ export function FormularioDeLogin({
         Manter conectado neste computador
       </label>
 
-      {estado.erro !== null && (
-        <p
-          role="alert"
-          className="rounded-lg border border-critica/20 bg-critica/5 px-3 py-2 text-sm text-critica"
-        >
-          {estado.erro}
-        </p>
-      )}
+      {estado.erro !== null && <Aviso tipo="erro">{estado.erro}</Aviso>}
 
       <Botao type="submit" largura="total" disabled={enviando}>
         {enviando ? "Entrando..." : "Entrar"}

@@ -45,7 +45,9 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   /api
     /mcp              → MCPServer: expõe o serviço de chamados simulado como ferramentas MCP
     /chat             → endpoint de streaming do agent
-  /login/acoes.ts     → Server Actions de entrar e sair (no lugar de /api/auth)
+  /login/acoes.ts     → Server Action de entrar (no lugar de /api/auth)
+  /sair/route.ts      → logout como navegação completa (POST → 303), para descartar a memória da página
+  /chat/acoes.ts      → Server Actions de confirmar e cancelar o rascunho
 
 /components           → Atomic Design
   /atoms
@@ -62,10 +64,11 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
 
 /application            → casos de uso, orquestram domain + ports
   usecases/
-    responder-mensagem.ts   (uma rodada de conversa: histórico → agent → decisão persistida)
+    responder-mensagem.ts   (uma rodada de conversa: histórico → agent → decisão persistida; limite de 30)
+    carregar-conversa.ts    (conversa ativa e histórico para a tela)
     confirmar-proposta.ts   (cria/atualiza o chamado só no clique de confirmação; cancelar)
     autenticar.ts
-  acoes-do-agent.ts         (chamadas de ferramenta → ações exibidas e proposta)
+  acoes-do-agent.ts         (chamadas de ferramenta → ações exibidas, detalhes, proposta e dados dos cards)
   ports/
     assistente.ts           (o agent visto pela aplicação: sem Mastra nem Gemini)
     conversas.ts, ticket-repository.ts, central-de-ajuda.ts, usuarios.ts
@@ -180,7 +183,21 @@ Transparência se resolve com o modificador do Tailwind sobre o token (`bg-criti
 - **Uma chamada de modelo por rodada**, com histórico limitado às últimas 20 mensagens, temperatura 0.2, no máximo 6 passos e 45 s de teto. As mensagens de confirmação e cancelamento são texto montado pelo código: zero tokens.
 - **O port `llm-provider` virou `assistente`.** Com o Mastra, trocar de provedor é trocar a configuração do modelo (`infrastructure/llm/modelo.ts`), então um port só para o provedor seria uma interface sem implementação alternativa. O port que isola de verdade é o `Assistente`: a aplicação não sabe que existe Mastra nem Gemini, e os testes dos casos de uso usam um assistente falso.
 - **Testes do loop real sem chave de API.** O Mastra traz `MastraLanguageModelV2Mock`, que aceita um stream por passo. Os testes roteirizam "chama ferramenta → chama outra → responde JSON" e exercitam o loop de verdade, com o servidor MCP real em memória por trás.
-- **Variáveis novas**: `GEMINI_MODEL` (padrão `gemini-3.8-flash`, rápido e barato) e `MCP_SERVER_URL`. A chave continua em `GEMINI_API_KEY`, passada explicitamente ao modelo em vez de depender do nome que o roteador do Mastra procura.
+- **Variáveis novas**: `GEMINI_MODEL` e `MCP_SERVER_URL`. O padrão do modelo virou `gemini-3.5-flash-lite` depois do teste real: os flash maiores (3.8, 3.7, 3.5) estavam sobrecarregados, com erro 503 e respostas de até 56 s para um "oi", e o 2.5-flash já não existe para a chave. O lite respondeu em cerca de 1 s e conduziu o fluxo inteiro em 6 s. A chave continua em `GEMINI_API_KEY`, passada explicitamente ao modelo em vez de depender do nome que o roteador do Mastra procura.
+
+## Decisões do chat do funcionário (Etapa 6)
+
+- **Transparência por expansão, no lugar da resposta.** Acima de cada resposta ficam as ações reais, com as palavras do protótipo ("consultou seus chamados", "classificou a prioridade"). O botão "Como decidi" abre ali mesmo: o que o agent entendeu, a decisão tomada, a segurança (medidor contra o mínimo de 70%), o porquê, cada ação com o detalhe do que encontrou ("7 chamados no total, 4 em aberto, 2 vencidos"; "afetados: somente você, urgência: trabalho parado → prioridade alta pela tabela do Anexo A"), as fontes da central de ajuda e a recomendação de analista. Escolhi expandir em vez de painel lateral porque mantém a explicação junto da resposta que ela explica e funciona no celular.
+- **Mesmo quando o modelo erra, o erro fica visível.** No teste real, o painel mostrou exatamente onde o modelo interpretou demais a urgência. É isso que permite ao analista (e ao avaliador) confiar ou corrigir.
+- **Cards desenhados a partir de dados gravados na decisão** (`chamadosListados`, `chamadoConsultado`, `artigosConsultados`), não de nova consulta: a conversa reaberta outro dia mostra os mesmos cards (história 6), sem consultar o sistema de novo e sem depender do estado atual.
+- **Qual card aparece é regra da tela, não do modelo**: proposta mostra o rascunho; chamado consultado mostra o card do chamado; intenção de consulta com mais de um chamado em aberto e nenhum escolhido mostra a lista de seleção. Quando a lista aparece, as respostas rápidas somem, para não oferecer a mesma escolha duas vezes.
+- **Streaming em NDJSON** pela rota `/api/chat`: eventos `acao` (ações ao vivo), `parcial` (texto crescendo, só quando muda), `respondida`, `com_analista`, `limite` e `erro`. A rota recusa sem sessão de funcionário (401) e valida o corpo (até 2.000 caracteres).
+- **Limite de 30 conta só as mensagens do funcionário**: cada uma é uma chamada ao modelo, então é a medida de custo. O bloqueio é **no servidor** (o modelo nem é chamado na 31ª); a tela avisa a partir da 25ª e trava o campo na 30ª. A 30ª resposta já sai com transferência recomendada por limite; a mudança de estado da conversa é da Etapa 7.
+- **Confirmar e cancelar são Server Actions** que chamam os casos de uso e devolvem a mensagem atualizada e a nova. "Editar" é conversacional: preenche o campo com "Quero ajustar o rascunho:" e o agent remonta. Sem formulário de edição para não abrir um caminho de alterar prioridade sem passar pela regra.
+- **Bug de privacidade encontrado e corrigido no teste.** Com `cacheComponents`, o Next 16 preserva o estado de rotas já visitadas (React Activity). Sair e entrar com outro usuário na mesma aba trazia de volta, em memória, a conversa do usuário anterior — o servidor estava certo, o navegador mostrava o antigo. Duas correções: o logout virou navegação completa (`POST /sair` respondendo 303, que descarta toda a memória da página) e o componente da conversa tem `key` com usuário e conversa, para ser recriado se receber dados de outra pessoa. Conferido no navegador: Ana → sair → Diego, na mesma aba, sem recarregar, e nada da Ana aparece.
+- **Evidência obrigatória para impacto e urgência.** O `propor_chamado` exige o trecho literal do que a pessoa escreveu para "quem é afetado" e para a urgência, e confere esse trecho nas mensagens dela (sem acento, caixa ou pontuação). Sem trecho válido, o campo é descartado e volta como "falta perguntar". Impede o modelo de inventar; não impede interpretar demais um trecho que existe — esses casos foram para o eval set da Etapa 9.
+- **Átomos novos que centralizam combinações**: `Selo` (o único lugar que define como cada prioridade e status aparece), `Aviso` (erro, atenção, informação — o login passou a usar também) e `MedidorDeConfianca`. `Botao` ganhou `tamanho` para as respostas rápidas não sobrescreverem classes por fora.
+- **Datas gravadas sem termos relativos.** Detalhes que ficam salvos usam data absoluta ("09 mar, 18:00"); "hoje"/"amanhã" só em texto de conversa, que tem horário ao lado.
 
 ## Decisões de comportamento do agent
 

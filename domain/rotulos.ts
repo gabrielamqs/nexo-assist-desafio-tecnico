@@ -1,9 +1,12 @@
 import type { Prazo } from "./prazos";
+import type { MotivoDeTransferencia } from "./transferencia";
 import type {
   Impacto,
+  Intencao,
   Prioridade,
   StatusDeChamado,
   TipoDeChamado,
+  Urgencia,
 } from "./types";
 
 export const ROTULO_DA_PRIORIDADE: Record<Prioridade, string> = {
@@ -47,3 +50,40 @@ const UNIDADE_NO_PLURAL: Record<Prazo["unidade"], string> = {
 
 export const descreverPrazo = ({ quantidade, unidade }: Prazo) =>
   `${quantidade} ${quantidade === 1 ? UNIDADE_NO_SINGULAR[unidade] : UNIDADE_NO_PLURAL[unidade]}`;
+
+export const ROTULO_DA_URGENCIA: Record<Urgencia, string> = {
+  trabalho_parado: "trabalho parado",
+  compromisso_no_dia: "compromisso no mesmo dia",
+  ha_alternativa: "atrapalha, mas há alternativa",
+  sem_urgencia: "sem urgência",
+};
+
+export const ROTULO_DO_CAMPO_DO_RASCUNHO: Record<string, string> = {
+  titulo: "título",
+  descricao: "descrição",
+  tipo: "tipo",
+  categoria: "categoria",
+  afetados: "quem é afetado",
+  urgencia: "urgência",
+};
+
+export const ROTULO_DA_INTENCAO: Record<Intencao, string> = {
+  tirar_duvida: "Tirar uma dúvida",
+  consultar_chamado: "Consultar chamado",
+  abrir_chamado: "Abrir chamado",
+  complementar_chamado: "Complementar chamado",
+  falar_com_analista: "Falar com um analista",
+  fora_do_escopo: "Fora do escopo de TI",
+  conversa: "Conversa",
+};
+
+export const ROTULO_DO_MOTIVO_DE_TRANSFERENCIA: Record<
+  MotivoDeTransferencia,
+  string
+> = {
+  pedido_do_funcionario: "a pessoa pediu um analista",
+  caso_critico: "caso crítico",
+  chamado_vencido: "chamado com prazo vencido",
+  limite_de_mensagens: "limite de mensagens da sessão",
+  baixa_confianca: "o agent não teve segurança para decidir",
+};

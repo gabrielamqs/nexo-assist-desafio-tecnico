@@ -1,5 +1,6 @@
 import {
   acoesDasFerramentas,
+  dadosConsultadosNasFerramentas,
   houveChamadoVencido,
   propostaDasFerramentas,
 } from "@/application/acoes-do-agent";
@@ -11,11 +12,12 @@ import {
 } from "@/application/ports/assistente";
 import type { RepositorioDeConversas } from "@/application/ports/conversas";
 import { avaliarTransferencia } from "@/domain/transferencia";
-import type {
-  Conversa,
-  DecisaoDoAgent,
-  Mensagem,
-  Usuario,
+import {
+  LIMITE_DE_MENSAGENS_POR_SESSAO,
+  type Conversa,
+  type DecisaoDoAgent,
+  type Mensagem,
+  type Usuario,
 } from "@/domain/types";
 
 export const LIMITE_DO_HISTORICO = 20;
@@ -24,6 +26,15 @@ export class MensagemVaziaError extends Error {
   constructor() {
     super("A mensagem está vazia.");
     this.name = "MensagemVaziaError";
+  }
+}
+
+export class LimiteDeMensagensAtingidoError extends Error {
+  constructor() {
+    super(
+      `Esta sessão chegou ao limite de ${LIMITE_DE_MENSAGENS_POR_SESSAO} mensagens.`,
+    );
+    this.name = "LimiteDeMensagensAtingidoError";
   }
 }
 
@@ -79,6 +90,7 @@ function montarDecisao(
       recomendada: avaliacao.deveTransferir,
       motivo: avaliacao.motivo,
     },
+    ...dadosConsultadosNasFerramentas(chamadasDeFerramenta),
   };
 }
 
@@ -93,6 +105,11 @@ export async function responderMensagem(
   const conversa =
     (await conversas.buscarAtiva(funcionario.id)) ??
     (await conversas.criar(funcionario.id));
+
+  const enviadas = await conversas.contarMensagens(conversa.id, "funcionario");
+  if (enviadas >= LIMITE_DE_MENSAGENS_POR_SESSAO) {
+    throw new LimiteDeMensagensAtingidoError();
+  }
 
   const mensagemDoFuncionario = await conversas.adicionarMensagem({
     conversaId: conversa.id,
@@ -120,13 +137,11 @@ export async function responderMensagem(
     throw new AssistenteIndisponivelError(erro);
   }
 
-  const mensagensNaSessao = (await conversas.contarMensagens(conversa.id)) + 1;
-
   const resposta = await conversas.adicionarMensagem({
     conversaId: conversa.id,
     autor: "agent",
     conteudo: saida.resposta,
-    decisao: montarDecisao(saida, mensagensNaSessao),
+    decisao: montarDecisao(saida, enviadas + 1),
   });
 
   return { situacao: "respondida", conversa, mensagemDoFuncionario, resposta };

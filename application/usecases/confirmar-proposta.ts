@@ -1,3 +1,4 @@
+import type { DadosConsultados } from "@/application/acoes-do-agent";
 import type { RepositorioDeConversas } from "@/application/ports/conversas";
 import type { RepositorioDeChamados } from "@/application/ports/ticket-repository";
 import { prazoDoChamado } from "@/domain/prazos";
@@ -12,6 +13,12 @@ import type {
   Usuario,
 } from "@/domain/types";
 import { formatarPrazoDeResposta } from "@/lib/formatacao";
+
+const SEM_DADOS_CONSULTADOS = {
+  chamadosListados: [],
+  chamadoConsultado: null,
+  artigosConsultados: [],
+} satisfies DadosConsultados;
 
 export class PropostaIndisponivelError extends Error {
   constructor() {
@@ -153,8 +160,10 @@ export async function confirmarProposta(
     prioridadeDoCaso: chamado.prioridade,
     temChamadoVencido: false,
     confianca: 1,
-    mensagensNaSessao:
-      (await conversas.contarMensagens(mensagem.conversaId)) + 1,
+    mensagensNaSessao: await conversas.contarMensagens(
+      mensagem.conversaId,
+      "funcionario",
+    ),
   });
 
   const confirmacao = await conversas.adicionarMensagem({
@@ -175,6 +184,7 @@ export async function confirmarProposta(
         recomendada: avaliacao.deveTransferir,
         motivo: avaliacao.motivo,
       },
+      ...SEM_DADOS_CONSULTADOS,
     },
   });
 
@@ -209,6 +219,7 @@ export async function cancelarProposta(
       opcoesRapidas: [],
       proposta: null,
       transferencia: { recomendada: false, motivo: null },
+      ...SEM_DADOS_CONSULTADOS,
     },
   });
 }

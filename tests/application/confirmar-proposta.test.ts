@@ -39,6 +39,9 @@ const decisaoCom = (proposta: PropostaDeChamado): DecisaoDoAgent => ({
   opcoesRapidas: [],
   proposta: { ...proposta, situacao: "pendente" },
   transferencia: { recomendada: false, motivo: null },
+  chamadosListados: [],
+  chamadoConsultado: null,
+  artigosConsultados: [],
 });
 
 let conversas: RepositorioDeConversas;

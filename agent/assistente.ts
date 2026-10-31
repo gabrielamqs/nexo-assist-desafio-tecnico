@@ -57,6 +57,9 @@ export function criarAssistenteNexo({
         model: modelo,
         tools: criarFerramentasDoAssistente({
           funcionarioId: funcionario.id,
+          falasDoFuncionario: historico
+            .filter((mensagem) => mensagem.autor === "funcionario")
+            .map((mensagem) => mensagem.conteudo),
           servico,
           agora,
           registrar: (chamada) => {
@@ -79,9 +82,14 @@ export function criarAssistenteNexo({
         },
       });
 
+      let ultimaResposta = "";
       for await (const parcial of execucao.objectStream) {
-        if (typeof parcial.resposta === "string") {
-          acompanhamento.aoAtualizarResposta?.(parcial.resposta);
+        if (
+          typeof parcial.resposta === "string" &&
+          parcial.resposta !== ultimaResposta
+        ) {
+          ultimaResposta = parcial.resposta;
+          acompanhamento.aoAtualizarResposta?.(ultimaResposta);
         }
       }
 

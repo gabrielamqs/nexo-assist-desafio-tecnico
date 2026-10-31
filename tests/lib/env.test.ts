@@ -18,7 +18,7 @@ describe("lerAmbiente", () => {
     expect(lerAmbiente({})).toEqual({
       NODE_ENV: "development",
       DATABASE_URL: "file:./data/nexo-assist.db",
-      GEMINI_MODEL: "gemini-3.8-flash",
+      GEMINI_MODEL: "gemini-3.5-flash-lite",
       MCP_SERVER_URL: "http://localhost:3000/api/mcp",
       TICKET_SERVICE_FAILURE_RATE: 0.08,
     });

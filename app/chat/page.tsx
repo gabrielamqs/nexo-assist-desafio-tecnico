@@ -1,27 +1,30 @@
-import { MarcaNexoAssist } from "@/components/atoms/MarcaNexoAssist";
-import { CartaoDoUsuario } from "@/components/molecules/CartaoDoUsuario";
+import { carregarConversa } from "@/application/usecases/carregar-conversa";
+import { ConversaComAssistente } from "@/components/organisms/ConversaComAssistente";
+import { LayoutDoAtendimento } from "@/components/templates/LayoutDoAtendimento";
+import { repositorioDeConversas } from "@/infrastructure/dependencias";
+import { paraMensagemNaTela } from "@/lib/mensagem-na-tela";
 import { exigirUsuario } from "@/lib/sessao-servidor";
 
 export const instant = false;
 
 export default async function PaginaDoChat() {
   const funcionario = await exigirUsuario("funcionario");
+  const { conversa, mensagens, mensagensEnviadas } = await carregarConversa(
+    { conversas: repositorioDeConversas() },
+    funcionario,
+  );
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-8 p-8">
-      <header className="flex items-center justify-between gap-4">
-        <MarcaNexoAssist />
-        <div className="w-64">
-          <CartaoDoUsuario usuario={funcionario} />
-        </div>
-      </header>
-
-      <section className="space-y-2 rounded-2xl border border-borda bg-superficie p-8">
-        <h1 className="font-serif text-2xl">Olá, {funcionario.nome}.</h1>
-        <p className="text-sm text-tinta-media">
-          O chat com o Nexo Assist entra aqui na próxima etapa.
-        </p>
-      </section>
-    </main>
+    <LayoutDoAtendimento usuario={funcionario}>
+      <ConversaComAssistente
+        key={`${funcionario.id}:${conversa?.id ?? "nova"}`}
+        primeiroNome={funcionario.nome.split(" ")[0] ?? funcionario.nome}
+        mensagensIniciais={mensagens.map(paraMensagemNaTela)}
+        mensagensEnviadasIniciais={mensagensEnviadas}
+        comAnalistaInicial={
+          conversa !== null && conversa.estado !== "com_agent"
+        }
+      />
+    </LayoutDoAtendimento>
   );
 }

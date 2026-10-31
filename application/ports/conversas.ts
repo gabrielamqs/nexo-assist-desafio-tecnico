@@ -1,4 +1,9 @@
-import type { Conversa, DecisaoDoAgent, Mensagem } from "@/domain/types";
+import type {
+  AutorDeMensagem,
+  Conversa,
+  DecisaoDoAgent,
+  Mensagem,
+} from "@/domain/types";
 
 export type NovaMensagem = Pick<
   Mensagem,
@@ -10,7 +15,7 @@ export type RepositorioDeConversas = {
   criar(funcionarioId: string): Promise<Conversa>;
   buscarPorId(id: string): Promise<Conversa | null>;
   listarMensagens(conversaId: string, limite?: number): Promise<Mensagem[]>;
-  contarMensagens(conversaId: string): Promise<number>;
+  contarMensagens(conversaId: string, autor?: AutorDeMensagem): Promise<number>;
   buscarMensagem(id: string): Promise<Mensagem | null>;
   adicionarMensagem(dados: NovaMensagem): Promise<Mensagem>;
   atualizarDecisao(mensagemId: string, decisao: DecisaoDoAgent): Promise<void>;
