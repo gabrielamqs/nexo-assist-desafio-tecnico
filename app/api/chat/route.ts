@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { acoesDasFerramentas } from "@/application/acoes-do-agent";
 import { AssistenteIndisponivelError } from "@/application/ports/assistente";
+import { novidadesDaConversa } from "@/application/usecases/carregar-conversa";
 import {
   LimiteDeMensagensAtingidoError,
   responderMensagem,
 } from "@/application/usecases/responder-mensagem";
+import type { NovidadesDoChat } from "@/app/chat/tipos";
 import {
   assistente,
   repositorioDeChamados,
@@ -21,6 +23,37 @@ const corpoDaRequisicao = z.object({
 
 const MENSAGEM_DE_FALHA =
   "Não consegui responder agora. O serviço pode estar instável; tente de novo em instantes.";
+
+export async function GET(requisicao: Request): Promise<Response> {
+  const funcionario = await usuarioAtual();
+  if (funcionario?.papel !== "funcionario") {
+    return Response.json({ erro: "Não autenticado." }, { status: 401 });
+  }
+
+  const parametros = new URL(requisicao.url).searchParams;
+  const conversaId = parametros.get("conversa");
+  if (conversaId === null) {
+    return Response.json({ erro: "Conversa não informada." }, { status: 400 });
+  }
+
+  const novidades = await novidadesDaConversa(
+    { conversas: repositorioDeConversas() },
+    funcionario,
+    { conversaId, desdeMensagemId: parametros.get("desde") },
+  );
+
+  if (novidades === null) {
+    return Response.json({ erro: "Conversa não encontrada." }, { status: 404 });
+  }
+
+  const corpo: NovidadesDoChat = {
+    estado: novidades.estado,
+    mensagens: novidades.mensagens.map(paraMensagemNaTela),
+    mensagensEnviadas: novidades.mensagensEnviadas,
+  };
+
+  return Response.json(corpo, { headers: { "Cache-Control": "no-store" } });
+}
 
 export async function POST(requisicao: Request): Promise<Response> {
   const funcionario = await usuarioAtual();
@@ -69,10 +102,15 @@ export async function POST(requisicao: Request): Promise<Response> {
           resultado.mensagemDoFuncionario,
         );
 
+        const conversaId = resultado.conversa.id;
+        const estado = resultado.conversa.estado;
+
         enviar(
           resultado.situacao === "respondida"
             ? {
                 tipo: "respondida",
+                conversaId,
+                estado,
                 mensagemDoFuncionario,
                 resposta: paraMensagemNaTela(resultado.resposta),
                 mensagensEnviadas,
@@ -83,6 +121,8 @@ export async function POST(requisicao: Request): Promise<Response> {
               }
             : {
                 tipo: "com_analista",
+                conversaId,
+                estado,
                 mensagemDoFuncionario,
                 mensagensEnviadas,
               },

@@ -239,6 +239,15 @@ Resultado da última rodada: 13 dos 14 casos passando. A limitação que sobrou 
 
 Erro de API não conta como erro do agent: quando o modelo devolve 503 ("sobrecarregado"), o caso roda de novo do zero, com banco e histórico novos. Repetir só o turno não serviria, porque a mensagem da pessoa já está gravada quando o modelo falha. Falha de comportamento não é repetida de propósito: repetir esconderia justamente a variação que o eval existe para medir.
 
+## Decisões do polimento (Etapa 10)
+
+- **O chat do funcionário se atualiza sozinho.** Enquanto a conversa existe e não está encerrada, a tela pergunta a cada 5 segundos por `GET /api/chat?conversa=...&desde=<última mensagem>` o que apareceu depois do que ela já mostra. O funcionário vê o analista assumir, responder, devolver e encerrar sem recarregar. Escolhi consulta periódica em vez de SSE ou WebSocket porque o streaming que importa (a resposta do agent) já é resolvido na própria requisição, e manter uma conexão aberta por aba só para o caso humano custaria mais do que entrega.
+- **A consulta é da conversa, não "da ativa".** O endereço leva o id da conversa que a tela está mostrando, e o caso de uso confere que ela é daquele funcionário antes de responder. Perguntar pela conversa ativa esconderia o encerramento, já que uma conversa encerrada deixa de ser a ativa.
+- **O que chega é mesclado por id**, nunca concatenado: a consulta é pausada enquanto o agent responde ou enquanto um rascunho está sendo confirmado, e mesmo assim a tela ignora mensagens que já estão nela. Duas fontes escrevendo na mesma lista pedem isso.
+- **O estado da conversa virou o que a tela conhece, no lugar de um booleano "com analista".** Os eventos do stream passaram a carregar `conversaId` e `estado`, e o rodapé diz a coisa certa em cada um deles — inclusive "atendimento encerrado", que antes aparecia como "está com um analista".
+- **Separador de dia** ("Hoje", "Ontem", "2 de março") entre mensagens de dias diferentes, no chat e na transcrição do analista. A conta de qual dia é fica em `lib/formatacao.ts`, com o fuso de São Paulo fixo, e não no componente.
+- **Carregamento por ação, não por tela.** O `Botao` ganhou `carregando`, que desabilita e mostra o giro. No console, quem gira é o botão clicado: assumir, devolver e encerrar se desabilitam juntos, mas só um deles diz que está trabalhando.
+
 ## Decisões de comportamento do agent
 
 - **Grau de confiança ("segurança")**: o LLM retorna isso como parte de um *structured output* (schema Zod) junto com a decisão e a justificativa — não é um cálculo heurístico separado.

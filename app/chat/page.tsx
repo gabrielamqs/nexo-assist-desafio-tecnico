@@ -15,15 +15,17 @@ export default async function PaginaDoChat() {
   );
 
   return (
-    <LayoutDoAtendimento usuario={funcionario}>
+    <LayoutDoAtendimento
+      usuario={funcionario}
+      estadoDaConversa={conversa?.estado ?? null}
+    >
       <ConversaComAssistente
         key={`${funcionario.id}:${conversa?.id ?? "nova"}`}
         primeiroNome={funcionario.nome.split(" ")[0] ?? funcionario.nome}
+        conversaIdInicial={conversa?.id ?? null}
+        estadoInicial={conversa?.estado ?? null}
         mensagensIniciais={mensagens.map(paraMensagemNaTela)}
         mensagensEnviadasIniciais={mensagensEnviadas}
-        comAnalistaInicial={
-          conversa !== null && conversa.estado !== "com_agent"
-        }
       />
     </LayoutDoAtendimento>
   );

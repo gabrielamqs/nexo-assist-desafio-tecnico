@@ -90,9 +90,10 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Ajustar limiar de confiança / prompt conforme resultado
 
 ## Etapa 10 — Estados de carregamento/erro e polimento
-- [ ] Loading states (streaming, busca de chamados, indisponibilidade simulada)
-- [ ] Tratamento de erro visível na UI ("tentando novamente")
-- [ ] Revisão de fidelidade ao protótipo (Anexo C). Pendências já vistas: separador de data ("Hoje") entre mensagens de dias diferentes no chat; o chat do funcionário não atualiza sozinho quando o analista responde (só ao recarregar)
+- [x] Loading states (streaming, busca de chamados, indisponibilidade simulada) — ações ao vivo e "pensando" no chat, e `carregando` no `Botao`, que mostra qual ação do console está rodando
+- [x] Tratamento de erro visível na UI — ação que falhou aparece com X e o motivo no "Como decidi"; o rascunho mostra o erro e libera o botão para confirmar de novo
+- [x] Revisão de fidelidade ao protótipo (Anexo C): separador de dia ("Hoje"/"Ontem") no chat e na transcrição do analista, e o selo do cabeçalho seguindo o estado da conversa
+- [x] O chat do funcionário se atualiza sozinho quando o analista assume, responde, devolve ou encerra
 
 ## Etapa 11 — README final
 - [ ] Como rodar

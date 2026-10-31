@@ -1,11 +1,31 @@
+import { Fragment } from "react";
 import { BolhaDoFuncionario } from "@/components/molecules/BolhaDoFuncionario";
 import { MarcoDaConversa } from "@/components/molecules/MarcoDaConversa";
 import { RolarParaOFim } from "@/components/molecules/RolarParaOFim";
-import type { MensagemNaTela } from "@/lib/mensagem-na-tela";
+import { SeparadorDeDia } from "@/components/molecules/SeparadorDeDia";
+import { mudouDeDia, type MensagemNaTela } from "@/lib/mensagem-na-tela";
 import {
   MensagemDoAnalista,
   MensagemDoAssistente,
 } from "./MensagemDoAssistente";
+
+function conteudoDaMensagem(mensagem: MensagemNaTela) {
+  switch (mensagem.autor) {
+    case "funcionario":
+      return <BolhaDoFuncionario texto={mensagem.conteudo} />;
+    case "analista":
+      return <MensagemDoAnalista mensagem={mensagem} />;
+    case "sistema":
+      return (
+        <MarcoDaConversa
+          texto={mensagem.conteudo}
+          criadaEm={mensagem.criadaEm}
+        />
+      );
+    case "agent":
+      return <MensagemDoAssistente mensagem={mensagem} />;
+  }
+}
 
 export function TranscricaoDaConversa({
   mensagens,
@@ -22,28 +42,14 @@ export function TranscricaoDaConversa({
 
   return (
     <div className="space-y-6 px-4 py-6 sm:px-6">
-      {mensagens.map((mensagem) => {
-        switch (mensagem.autor) {
-          case "funcionario":
-            return (
-              <BolhaDoFuncionario key={mensagem.id} texto={mensagem.conteudo} />
-            );
-          case "analista":
-            return <MensagemDoAnalista key={mensagem.id} mensagem={mensagem} />;
-          case "sistema":
-            return (
-              <MarcoDaConversa
-                key={mensagem.id}
-                texto={mensagem.conteudo}
-                criadaEm={mensagem.criadaEm}
-              />
-            );
-          case "agent":
-            return (
-              <MensagemDoAssistente key={mensagem.id} mensagem={mensagem} />
-            );
-        }
-      })}
+      {mensagens.map((mensagem, indice) => (
+        <Fragment key={mensagem.id}>
+          {mudouDeDia(mensagens[indice - 1], mensagem) && (
+            <SeparadorDeDia criadaEm={mensagem.criadaEm} />
+          )}
+          {conteudoDaMensagem(mensagem)}
+        </Fragment>
+      ))}
       <RolarParaOFim gatilho={mensagens.at(-1)?.id ?? ""} />
     </div>
   );

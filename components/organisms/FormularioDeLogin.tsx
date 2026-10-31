@@ -81,7 +81,7 @@ export function FormularioDeLogin({
 
       {estado.erro !== null && <Aviso tipo="erro">{estado.erro}</Aviso>}
 
-      <Botao type="submit" largura="total" disabled={enviando}>
+      <Botao type="submit" largura="total" carregando={enviando}>
         {enviando ? "Entrando..." : "Entrar"}
         {!enviando && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
       </Botao>

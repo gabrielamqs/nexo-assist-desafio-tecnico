@@ -1,9 +1,11 @@
+import { LoaderCircle } from "lucide-react";
 import type { ComponentProps } from "react";
 
 type Props = ComponentProps<"button"> & {
   variante?: "primario" | "secundario" | "fantasma";
   tamanho?: "normal" | "compacto";
   largura?: "automatica" | "total";
+  carregando?: boolean;
 };
 
 const POR_VARIANTE = {
@@ -24,15 +26,25 @@ export function Botao({
   variante = "primario",
   tamanho = "normal",
   largura = "automatica",
+  carregando = false,
   className = "",
   type = "button",
+  disabled = false,
+  children,
   ...resto
 }: Props) {
   return (
     <button
       type={type}
+      disabled={disabled || carregando}
+      aria-busy={carregando || undefined}
       className={`inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed ${POR_VARIANTE[variante]} ${POR_TAMANHO[tamanho]} ${largura === "total" ? "w-full" : ""} ${className}`}
       {...resto}
-    />
+    >
+      {carregando && (
+        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+      )}
+      {children}
+    </button>
   );
 }

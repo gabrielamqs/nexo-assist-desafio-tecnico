@@ -49,7 +49,7 @@ export function CartaoDeRascunho({ proposta, acoes }: Props) {
       rodape={
         pendente && acoes !== undefined ? (
           <>
-            <Botao onClick={acoes.aoConfirmar} disabled={acoes.ocupado}>
+            <Botao onClick={acoes.aoConfirmar} carregando={acoes.ocupado}>
               {acoes.ocupado ? "Confirmando..." : "Confirmar"}
               {!acoes.ocupado && (
                 <CornerDownLeft className="h-3.5 w-3.5" aria-hidden="true" />

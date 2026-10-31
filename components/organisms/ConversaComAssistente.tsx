@@ -1,18 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { cancelarRascunho, confirmarRascunho } from "@/app/chat/acoes";
-import type { ResultadoDaAcaoNoRascunho } from "@/app/chat/tipos";
+import type {
+  NovidadesDoChat,
+  ResultadoDaAcaoNoRascunho,
+} from "@/app/chat/tipos";
 import { Aviso } from "@/components/atoms/Aviso";
 import { BolhaDoFuncionario } from "@/components/molecules/BolhaDoFuncionario";
 import { Compositor } from "@/components/molecules/Compositor";
 import { MarcoDaConversa } from "@/components/molecules/MarcoDaConversa";
+import { SeparadorDeDia } from "@/components/molecules/SeparadorDeDia";
 import {
   LIMITE_DE_MENSAGENS_POR_SESSAO,
   MENSAGENS_PARA_AVISAR_DO_LIMITE,
   type AcaoDoAgent,
+  type EstadoDaConversa,
 } from "@/domain/types";
-import { lerEventosDoChat, type MensagemNaTela } from "@/lib/mensagem-na-tela";
+import {
+  lerEventosDoChat,
+  mudouDeDia,
+  type MensagemNaTela,
+} from "@/lib/mensagem-na-tela";
 import {
   MensagemDeBoasVindas,
   MensagemDoAnalista,
@@ -29,11 +38,24 @@ const SUGESTOES_INICIAIS = [
 const FALHA_DE_CONEXAO =
   "Não consegui falar com o servidor. Verifique a sua conexão e tente de novo.";
 
+const INTERVALO_DE_ATUALIZACAO_EM_MS = 5_000;
+
+const AVISO_POR_ESTADO: Record<EstadoDaConversa, string | null> = {
+  com_agent: null,
+  aguardando_analista:
+    "Você está na fila para um analista. O Nexo Assist fica pausado até alguém assumir.",
+  com_analista:
+    "Sua conversa está com um analista. O Nexo Assist volta a responder quando ele liberar.",
+  encerrada:
+    "Atendimento encerrado. Atualize a página para começar uma conversa nova.",
+};
+
 type Props = {
   primeiroNome: string;
+  conversaIdInicial: string | null;
+  estadoInicial: EstadoDaConversa | null;
   mensagensIniciais: MensagemNaTela[];
   mensagensEnviadasIniciais: number;
-  comAnalistaInicial: boolean;
 };
 
 type RespostaEmAndamento = { acoes: AcaoDoAgent[]; parcial: string };
@@ -43,6 +65,12 @@ const substituir = (
   id: string,
   nova: MensagemNaTela,
 ) => mensagens.map((mensagem) => (mensagem.id === id ? nova : mensagem));
+
+const acrescentar = (atuais: MensagemNaTela[], novas: MensagemNaTela[]) => {
+  const conhecidas = new Set(atuais.map((mensagem) => mensagem.id));
+  const ineditas = novas.filter((mensagem) => !conhecidas.has(mensagem.id));
+  return ineditas.length === 0 ? atuais : [...atuais, ...ineditas];
+};
 
 function ContadorDeMensagens({ enviadas }: { enviadas: number }) {
   const perto = enviadas >= MENSAGENS_PARA_AVISAR_DO_LIMITE;
@@ -57,13 +85,15 @@ function ContadorDeMensagens({ enviadas }: { enviadas: number }) {
 
 export function ConversaComAssistente({
   primeiroNome,
+  conversaIdInicial,
+  estadoInicial,
   mensagensIniciais,
   mensagensEnviadasIniciais,
-  comAnalistaInicial,
 }: Props) {
   const [mensagens, setMensagens] = useState(mensagensIniciais);
   const [enviadas, setEnviadas] = useState(mensagensEnviadasIniciais);
-  const [comAnalista, setComAnalista] = useState(comAnalistaInicial);
+  const [conversaId, setConversaId] = useState(conversaIdInicial);
+  const [estado, setEstado] = useState(estadoInicial);
   const [emAndamento, setEmAndamento] = useState<RespostaEmAndamento | null>(
     null,
   );
@@ -79,12 +109,50 @@ export function ConversaComAssistente({
 
   const limiteAtingido = enviadas >= LIMITE_DE_MENSAGENS_POR_SESSAO;
   const ocupado = emAndamento !== null || rascunhoEmAcao !== null;
-  const bloqueado = limiteAtingido || comAnalista;
+  const comAgent = estado === null || estado === "com_agent";
+  const bloqueado = limiteAtingido || !comAgent;
   const restantes = LIMITE_DE_MENSAGENS_POR_SESSAO - enviadas;
+  const ultimaMensagemId = mensagens.at(-1)?.id ?? null;
 
   useEffect(() => {
     fim.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [mensagens, emAndamento, erro]);
+
+  useEffect(() => {
+    if (conversaId === null || estado === null || estado === "encerrada") {
+      return;
+    }
+    if (ocupado) return;
+
+    const controle = new AbortController();
+
+    const buscarNovidades = async () => {
+      const endereco = new URL("/api/chat", window.location.origin);
+      endereco.searchParams.set("conversa", conversaId);
+      if (ultimaMensagemId !== null) {
+        endereco.searchParams.set("desde", ultimaMensagemId);
+      }
+
+      const resposta = await fetch(endereco, { signal: controle.signal }).catch(
+        () => null,
+      );
+      if (resposta === null || !resposta.ok) return;
+
+      const novidades = (await resposta.json()) as NovidadesDoChat;
+      setEstado(novidades.estado);
+      setEnviadas(novidades.mensagensEnviadas);
+      setMensagens((atuais) => acrescentar(atuais, novidades.mensagens));
+    };
+
+    const relogio = setInterval(() => {
+      void buscarNovidades();
+    }, INTERVALO_DE_ATUALIZACAO_EM_MS);
+
+    return () => {
+      controle.abort();
+      clearInterval(relogio);
+    };
+  }, [conversaId, estado, ocupado, ultimaMensagemId]);
 
   async function enviar(conteudo: string) {
     if (ocupado || bloqueado) return;
@@ -135,14 +203,16 @@ export function ConversaComAssistente({
               ...(evento.transferencia === null ? [] : [evento.transferencia]),
             ]);
             setEnviadas(evento.mensagensEnviadas);
-            if (evento.transferencia !== null) setComAnalista(true);
+            setConversaId(evento.conversaId);
+            setEstado(evento.estado);
             break;
           case "com_analista":
             setMensagens((atuais) =>
               substituir(atuais, provisoria.id, evento.mensagemDoFuncionario),
             );
             setEnviadas(evento.mensagensEnviadas);
-            setComAnalista(true);
+            setConversaId(evento.conversaId);
+            setEstado(evento.estado);
             break;
           case "limite":
             setMensagens((atuais) =>
@@ -191,11 +261,48 @@ export function ConversaComAssistente({
     campo.current?.focus();
   }
 
-  const avisoDoRodape = comAnalista
-    ? "Sua conversa está com um analista. O Nexo Assist volta a responder quando ele liberar."
-    : limiteAtingido
+  function conteudoDaMensagem(mensagem: MensagemNaTela, indice: number) {
+    switch (mensagem.autor) {
+      case "funcionario":
+        return <BolhaDoFuncionario texto={mensagem.conteudo} />;
+      case "analista":
+        return <MensagemDoAnalista mensagem={mensagem} />;
+      case "sistema":
+        return (
+          <MarcoDaConversa
+            texto={mensagem.conteudo}
+            criadaEm={mensagem.criadaEm}
+          />
+        );
+      case "agent":
+        return (
+          <MensagemDoAssistente
+            mensagem={mensagem}
+            ehAUltima={
+              indice === mensagens.length - 1 && !ocupado && !bloqueado
+            }
+            aoEnviar={enviar}
+            rascunho={{
+              ocupado: rascunhoEmAcao === mensagem.id,
+              erro:
+                erroNoRascunho?.mensagemId === mensagem.id
+                  ? erroNoRascunho.texto
+                  : null,
+              aoConfirmar: () => agirNoRascunho(mensagem.id, confirmarRascunho),
+              aoEditar: editarRascunho,
+              aoCancelar: () => agirNoRascunho(mensagem.id, cancelarRascunho),
+            }}
+          />
+        );
+    }
+  }
+
+  const avisoDoEstado = estado === null ? null : AVISO_POR_ESTADO[estado];
+  const avisoDoRodape =
+    avisoDoEstado ??
+    (limiteAtingido
       ? `Esta sessão chegou ao limite de ${LIMITE_DE_MENSAGENS_POR_SESSAO} mensagens. Um analista vai continuar o atendimento.`
-      : null;
+      : null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -209,52 +316,14 @@ export function ConversaComAssistente({
             />
           )}
 
-          {mensagens.map((mensagem, indice) => {
-            switch (mensagem.autor) {
-              case "funcionario":
-                return (
-                  <BolhaDoFuncionario
-                    key={mensagem.id}
-                    texto={mensagem.conteudo}
-                  />
-                );
-              case "analista":
-                return (
-                  <MensagemDoAnalista key={mensagem.id} mensagem={mensagem} />
-                );
-              case "sistema":
-                return (
-                  <MarcoDaConversa
-                    key={mensagem.id}
-                    texto={mensagem.conteudo}
-                    criadaEm={mensagem.criadaEm}
-                  />
-                );
-              case "agent":
-                return (
-                  <MensagemDoAssistente
-                    key={mensagem.id}
-                    mensagem={mensagem}
-                    ehAUltima={
-                      indice === mensagens.length - 1 && !ocupado && !bloqueado
-                    }
-                    aoEnviar={enviar}
-                    rascunho={{
-                      ocupado: rascunhoEmAcao === mensagem.id,
-                      erro:
-                        erroNoRascunho?.mensagemId === mensagem.id
-                          ? erroNoRascunho.texto
-                          : null,
-                      aoConfirmar: () =>
-                        agirNoRascunho(mensagem.id, confirmarRascunho),
-                      aoEditar: editarRascunho,
-                      aoCancelar: () =>
-                        agirNoRascunho(mensagem.id, cancelarRascunho),
-                    }}
-                  />
-                );
-            }
-          })}
+          {mensagens.map((mensagem, indice) => (
+            <Fragment key={mensagem.id}>
+              {mudouDeDia(mensagens[indice - 1], mensagem) && (
+                <SeparadorDeDia criadaEm={mensagem.criadaEm} />
+              )}
+              {conteudoDaMensagem(mensagem, indice)}
+            </Fragment>
+          ))}
 
           {emAndamento !== null && <MensagemEmAndamento {...emAndamento} />}
           {erro !== null && <Aviso tipo="erro">{erro}</Aviso>}

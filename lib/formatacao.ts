@@ -55,6 +55,24 @@ const formatoDiaCurto = new Intl.DateTimeFormat("pt-BR", {
 
 export const formatarHora = (data: Date) => formatoDaHora.format(data);
 
+export const ehOutroDia = (uma: Date, outra: Date) =>
+  formatoDoDia.format(uma) !== formatoDoDia.format(outra);
+
+const formatoDoDiaPorExtenso = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: FUSO_HORARIO,
+  day: "numeric",
+  month: "long",
+});
+
+export function formatarDiaDaConversa(data: Date, agora: Date): string {
+  if (!ehOutroDia(data, agora)) return "Hoje";
+
+  const ontem = new Date(agora.getTime() - MS_POR_DIA);
+  if (!ehOutroDia(data, ontem)) return "Ontem";
+
+  return formatoDoDiaPorExtenso.format(data);
+}
+
 export function formatarDiaCurto(data: Date): string {
   const partes = formatoDiaCurto.formatToParts(data);
   const dia = partes.find((parte) => parte.type === "day")?.value ?? "";

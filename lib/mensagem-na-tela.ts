@@ -2,8 +2,10 @@ import type {
   AcaoDoAgent,
   AutorDeMensagem,
   DecisaoDoAgent,
+  EstadoDaConversa,
   Mensagem,
 } from "@/domain/types";
+import { ehOutroDia } from "@/lib/formatacao";
 
 export type MensagemNaTela = {
   id: string;
@@ -20,6 +22,13 @@ const normalizarDecisao = (decisao: DecisaoDoAgent): DecisaoDoAgent => ({
   artigosConsultados: decisao.artigosConsultados ?? [],
 });
 
+export const mudouDeDia = (
+  anterior: MensagemNaTela | undefined,
+  atual: MensagemNaTela,
+) =>
+  anterior === undefined ||
+  ehOutroDia(new Date(anterior.criadaEm), new Date(atual.criadaEm));
+
 export const paraMensagemNaTela = (mensagem: Mensagem): MensagemNaTela => ({
   id: mensagem.id,
   autor: mensagem.autor,
@@ -34,6 +43,8 @@ export type EventoDoChat =
   | { tipo: "parcial"; texto: string }
   | {
       tipo: "respondida";
+      conversaId: string;
+      estado: EstadoDaConversa;
       mensagemDoFuncionario: MensagemNaTela;
       resposta: MensagemNaTela;
       mensagensEnviadas: number;
@@ -41,6 +52,8 @@ export type EventoDoChat =
     }
   | {
       tipo: "com_analista";
+      conversaId: string;
+      estado: EstadoDaConversa;
       mensagemDoFuncionario: MensagemNaTela;
       mensagensEnviadas: number;
     }
