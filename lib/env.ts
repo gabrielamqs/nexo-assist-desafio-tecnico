@@ -30,7 +30,7 @@ const esquemaDoAmbiente = z
     ),
     GEMINI_API_KEY: vazioComoAusente(z.string().trim().optional()),
     GEMINI_MODEL: vazioComoAusente(
-      z.string().trim().default("gemini-3.8-flash"),
+      z.string().trim().default("gemini-3.5-flash-lite"),
     ),
     MCP_SERVER_URL: vazioComoAusente(
       z
