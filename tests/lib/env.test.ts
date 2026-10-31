@@ -19,9 +19,23 @@ describe("lerAmbiente", () => {
       NODE_ENV: "development",
       DATABASE_URL: "file:./data/nexo-assist.db",
       GEMINI_MODEL: "gemini-3.5-flash-lite",
+      PORT: 3000,
       MCP_SERVER_URL: "http://localhost:3000/api/mcp",
       TICKET_SERVICE_FAILURE_RATE: 0.08,
     });
+  });
+
+  it("deriva a URL do MCP da porta, para o agent se achar atrás de porta dinâmica", () => {
+    expect(lerAmbiente({ PORT: "8080" }).MCP_SERVER_URL).toBe(
+      "http://localhost:8080/api/mcp",
+    );
+  });
+
+  it("respeita a URL do MCP quando ela é informada", () => {
+    expect(
+      lerAmbiente({ PORT: "8080", MCP_SERVER_URL: "https://nexo.app/api/mcp" })
+        .MCP_SERVER_URL,
+    ).toBe("https://nexo.app/api/mcp");
   });
 
   it("trata variável vazia como ausente, como vem do .env.example", () => {

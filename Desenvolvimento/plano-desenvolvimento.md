@@ -191,6 +191,22 @@ Registrado para não virar "bug" em revisão futura.
 - O ícone da marca é **cortado à direita** no protótipo (desenho de 24,388 px dentro de uma caixa de 24 px com clip). Reproduzido como está, de propósito.
 
 ## Etapa 13 — Deploy (diferencial)
-- [ ] Deploy no Railway com volume persistente
-- [ ] Proteção de chaves / limite de uso
-- [ ] Documentar processo de deploy no README
+
+### Preparo do repositório (feito)
+- [x] `railway.json` com builder Nixpacks, comando de start, healthcheck e política de reinício
+- [x] `GET /api/saude` conferindo o banco — é o healthcheck que a Railway usa para promover ou reprovar o deploy
+- [x] `MCP_SERVER_URL` derivada de `PORT` quando não informada: a porta em produção é dinâmica e o valor fixo `localhost:3000` quebraria o serviço de chamados
+- [x] Limite de uso por pessoa em `/api/chat` (15 mensagens por minuto, `lib/limite-de-uso.ts`), para uma aba em laço não queimar a cota do Gemini
+- [x] `.env.example` com as notas de produção (caminho do volume, variáveis obrigatórias)
+- [x] Seção "Deploy" no README com o passo a passo da Railway
+
+**Verificado localmente** com `next start` e variáveis de produção, banco num caminho absoluto fora do repositório (simulando o volume):
+- migrations e seed rodam sozinhos num banco vazio; `/api/saude` e `/login` respondem 200
+- sem `GEMINI_API_KEY`/`SESSION_SECRET` em produção, o `instrumentation.ts` falha e **toda requisição devolve 500**, com o log nomeando a variável que faltou e nunca o valor. O processo não encerra — por isso o healthcheck importa: é ele que faz a Railway reprovar o deploy
+
+### Falta fazer (precisa da conta da Railway)
+- [ ] Criar o projeto a partir do repositório
+- [ ] Criar o volume e montar em `/data`
+- [ ] Definir `GEMINI_API_KEY`, `SESSION_SECRET`, `DATABASE_URL=file:/data/nexo-assist.db` e `NODE_ENV=production`
+- [ ] Gerar o domínio e conferir `/api/saude`
+- [ ] Anotar a URL pública no README

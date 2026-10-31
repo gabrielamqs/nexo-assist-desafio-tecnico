@@ -41,8 +41,11 @@ Todas são lidas e validadas em um único lugar (`lib/env.ts`). Valor inválido 
 | `GEMINI_MODEL`                | Modelo usado pelo agent                                                   | `gemini-3.5-flash-lite`            |
 | `SESSION_SECRET`              | Assina o cookie de sessão (mínimo 32 caracteres). Obrigatória em produção | segredo fixo só em desenvolvimento |
 | `DATABASE_URL`                | Banco SQLite                                                              | `file:./data/nexo-assist.db`       |
-| `MCP_SERVER_URL`              | Endereço do serviço de chamados que o agent consome                       | `http://localhost:3000/api/mcp`    |
+| `MCP_SERVER_URL`              | Endereço do serviço de chamados que o agent consome                       | `http://localhost:$PORT/api/mcp`   |
+| `PORT`                        | Porta em que o app escuta                                                 | `3000`                             |
 | `TICKET_SERVICE_FAILURE_RATE` | Chance (0 a 1) de o sistema legado simular indisponibilidade              | `0.08`                             |
+
+`MCP_SERVER_URL` é derivada de `PORT` quando não é informada, porque o agent chama o próprio processo: em produção a porta é dinâmica e um valor fixo quebraria o serviço de chamados.
 
 ### Como entrar
 
@@ -75,6 +78,36 @@ Para ver o fluxo completo: entre como Carla, que tem um chamado crítico vencido
 | `npm run db:generate`  | Gera a migration a partir do schema                                    |
 | `npm run db:seed`      | Popula o banco com os dados de exemplo                                 |
 | `npm run conversar`    | Conversa com o agent no terminal, mostrando a decisão de cada resposta |
+
+## Deploy
+
+O app precisa de **processo longo e disco persistente** (SQLite em arquivo + um servidor MCP que o próprio app consome), então não é serverless. O repositório já vem com `railway.json` apontando o build, o comando de start e o healthcheck.
+
+### Railway, passo a passo
+
+1. **Criar o projeto** a partir deste repositório ("Deploy from GitHub repo"). O Nixpacks detecta o Next.js e usa `npm run build` / `npm run start`.
+2. **Criar o volume** e montá-lo em `/data`. Sem isso, cada deploy começa com o banco vazio — os chamados e conversas somem.
+3. **Definir as variáveis** em Settings → Variables:
+
+   | Variável         | Valor                              |
+   | ---------------- | ---------------------------------- |
+   | `GEMINI_API_KEY` | sua chave do Google AI Studio      |
+   | `SESSION_SECRET` | saída de `openssl rand -base64 32` |
+   | `DATABASE_URL`   | `file:/data/nexo-assist.db`        |
+   | `NODE_ENV`       | `production`                       |
+
+   `PORT` é definida pela Railway. `MCP_SERVER_URL` fica em branco de propósito — ela é derivada de `PORT`.
+
+4. **Gerar o domínio** em Settings → Networking → Generate Domain.
+5. **Conferir**: `GET /api/saude` deve responder `{"estado":"ok"}`. É o healthcheck que a Railway usa; se o banco não responder, devolve 503 e a Railway reverte o deploy.
+
+Migrations e seed rodam sozinhos ao subir (`instrumentation.ts`). O seed só insere quando o banco está vazio, então reiniciar não apaga nem duplica nada.
+
+### O que conferir antes do primeiro deploy
+
+- `NODE_ENV=production` torna `GEMINI_API_KEY` e `SESSION_SECRET` obrigatórias. Faltando qualquer uma, o `instrumentation.ts` falha: o processo continua de pé, mas **toda requisição devolve 500** e o log nomeia a variável que faltou, nunca o valor. Como `/api/saude` também devolve 500, a Railway reprova o healthcheck e não promove o deploy.
+- **Uma instância só.** O banco é um arquivo no volume e o limite de uso é contado em memória; escalar horizontalmente exige trocar os dois.
+- `TICKET_SERVICE_FAILURE_RATE` continua em `0.08` — o sistema legado vai falhar de vez em quando de propósito, porque o desafio pede tratamento de indisponibilidade. Para uma demonstração ao vivo sem sustos, defina `0`.
 
 ## Visão geral da arquitetura
 
@@ -176,6 +209,7 @@ O custo dessa escolha é um modelo menor com menos julgamento. A resposta de eng
 - **Chaves fora do código.** Tudo vem do ambiente, validado em `lib/env.ts`. Nenhuma variável tem o prefixo `NEXT_PUBLIC_`, então nenhum segredo vai para o navegador; conferido no build, a chave do Gemini não aparece em nenhum arquivo gerado.
 - **Chamados de um funcionário nunca chegam a outro.** O `funcionarioId` vem da sessão e é fechado na criação das ferramentas, a cada requisição; o modelo não tem esse campo. Dentro do servidor MCP, chamado de outra pessoa e chamado inexistente devolvem a mesma mensagem, para não confirmar que o dos outros existe. A rota de atualização ao vivo confere o dono da conversa. Há teste para cada uma dessas camadas.
 - **O analista vê só os chamados do funcionário em atendimento**, a partir do id da conversa, nunca de uma busca livre.
+- **Limite de uso por pessoa.** Além do teto de 30 mensagens por sessão, `/api/chat` aceita no máximo 15 mensagens por minuto por funcionário (`lib/limite-de-uso.ts`), para que uma aba em laço não consuma a cota do Gemini. Passando disso, a conversa continua de onde parou depois de um minuto. A contagem é em memória, o que basta para uma instância só.
 - **Sessão** em cookie assinado com HMAC-SHA256, `httpOnly`, `sameSite=lax`, `secure` em produção, comparação em tempo constante. Logout é navegação completa (`POST /sair`): no Next 16 a página guardava em memória a conversa do usuário anterior, e o logout por navegação completa descarta isso. Foi um bug real, achado no teste manual.
 
 ## Principais trade-offs
@@ -198,9 +232,9 @@ O custo dessa escolha é um modelo menor com menos julgamento. A resposta de eng
 - **Tempo real de verdade** (SSE) para o lado do analista, e notificação quando uma conversa entra na fila.
 - **Editar o rascunho num formulário** com revalidação pela mesma regra de prioridade, em vez do "Editar" conversacional de hoje.
 - **Feriados** no cálculo de prazos e fuso configurável.
-- **Autenticação real**, limite de uso por usuário e proteção contra abuso de chamadas ao modelo.
+- **Autenticação real** (hoje qualquer senha é aceita, como o PRD pede) e limite de uso compartilhado entre instâncias, já que o atual é por processo.
 - **Testes de ponta a ponta** com navegador (Playwright) para o fluxo funcionário → analista → funcionário, que hoje eu só validei à mão.
-- **Revisão visual das telas contra o protótipo** com screenshots lado a lado; o protótipo é um canvas pesado e travou a automação do navegador, então essa conferência ficou manual.
+- **Presença e leitura** (contador de não lidas, ticks, "digitando…"): o protótipo mostra os três, mas não há modelo de presença nem de leitura, e inventar esses números seria mentir na tela. Ver Etapa 12.6 em `Desenvolvimento/plano-desenvolvimento.md`.
 
 ## Estrutura do repositório
 

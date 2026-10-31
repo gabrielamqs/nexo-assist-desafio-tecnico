@@ -12,6 +12,7 @@ import {
   repositorioDeChamados,
   repositorioDeConversas,
 } from "@/infrastructure/dependencias";
+import { registrarUso } from "@/lib/limite-de-uso";
 import { paraMensagemNaTela, type EventoDoChat } from "@/lib/mensagem-na-tela";
 import { usuarioAtual } from "@/lib/sessao-servidor";
 
@@ -23,6 +24,21 @@ const corpoDaRequisicao = z.object({
 
 const MENSAGEM_DE_FALHA =
   "Não consegui responder agora. O serviço pode estar instável; tente de novo em instantes.";
+
+const MENSAGEM_DE_EXCESSO =
+  "Você mandou muitas mensagens seguidas. Espere um minuto e continue de onde parou.";
+
+const eventoUnico = (evento: EventoDoChat) =>
+  new Response(
+    `${JSON.stringify(evento)}
+`,
+    {
+      headers: {
+        "Content-Type": "application/x-ndjson",
+        "Cache-Control": "no-store",
+      },
+    },
+  );
 
 export async function GET(requisicao: Request): Promise<Response> {
   const funcionario = await usuarioAtual();
@@ -66,6 +82,10 @@ export async function POST(requisicao: Request): Promise<Response> {
   );
   if (!corpo.success) {
     return Response.json({ erro: "Mensagem inválida." }, { status: 400 });
+  }
+
+  if (!registrarUso(funcionario.id)) {
+    return eventoUnico({ tipo: "erro", mensagem: MENSAGEM_DE_EXCESSO });
   }
 
   const codificador = new TextEncoder();

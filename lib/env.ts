@@ -32,6 +32,14 @@ const esquemaDoAmbiente = z
     GEMINI_MODEL: vazioComoAusente(
       z.string().trim().default("gemini-3.5-flash-lite"),
     ),
+    PORT: vazioComoAusente(
+      z.coerce
+        .number({ error: "deve ser um número" })
+        .int({ error: "deve ser um número inteiro" })
+        .min(1, { error: "deve estar entre 1 e 65535" })
+        .max(65535, { error: "deve estar entre 1 e 65535" })
+        .default(3000),
+    ),
     MCP_SERVER_URL: vazioComoAusente(
       z
         .url({
@@ -39,7 +47,7 @@ const esquemaDoAmbiente = z
           error:
             "deve ser uma URL completa, como http://localhost:3000/api/mcp",
         })
-        .default("http://localhost:3000/api/mcp"),
+        .optional(),
     ),
     TICKET_SERVICE_FAILURE_RATE: vazioComoAusente(
       z.coerce
@@ -61,7 +69,12 @@ const esquemaDoAmbiente = z
         });
       }
     }
-  });
+  })
+  .transform((ambiente) => ({
+    ...ambiente,
+    MCP_SERVER_URL:
+      ambiente.MCP_SERVER_URL ?? `http://localhost:${ambiente.PORT}/api/mcp`,
+  }));
 
 export type Ambiente = z.infer<typeof esquemaDoAmbiente>;
 
