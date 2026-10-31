@@ -60,6 +60,7 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
   prazos.ts             (horário útil, prazo por prioridade, chamado vencido)
   prioridade.ts         (impacto + urgência → prioridade)
   chamados.ts           (validação de abertura, duplicidade/reabertura, privacidade)
+  conversas.ts          (estados da conversa, transições e filtros da fila)
   transferencia.ts      (gatilhos de transferência para analista)
 
 /application            → casos de uso, orquestram domain + ports
@@ -67,6 +68,7 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
     responder-mensagem.ts   (uma rodada de conversa: histórico → agent → decisão persistida; limite de 30)
     carregar-conversa.ts    (conversa ativa e histórico para a tela)
     transferir-conversa.ts  (estado, resumo, chamado e marco na conversa)
+    console-do-analista.ts  (fila, atendimento, assumir, devolver, encerrar, responder)
     confirmar-proposta.ts   (cria/atualiza o chamado só no clique de confirmação; cancelar)
     autenticar.ts
   acoes-do-agent.ts         (chamadas de ferramenta → ações exibidas, detalhes, proposta e dados dos cards)
@@ -207,6 +209,17 @@ Transparência se resolve com o modificador do Tailwind sobre o token (`bg-criti
 - **A transferência também alcança o chamado.** Se a conversa girava em torno de um chamado, ele vai para "aguardando analista" com o resumo no histórico. Uma falha do sistema legado aqui **não desfaz** a transferência da conversa: ela já aconteceu, e o chamado fica para o analista acertar. Há teste com o repositório falhando.
 - **O agent pausa por estado da conversa, não por sinalizador na tela.** Enquanto o estado não for `com_agent`, `responderMensagem` grava a mensagem da pessoa (o analista precisa vê-la) e devolve sem chamar o modelo. Conferido no teste real: depois de transferir, "Alguém aí?" entrou na conversa e o agent não respondeu.
 - **O motivo fica visível para os dois lados**, numa mensagem de sistema no fio da conversa ("Transferida para um analista · a pessoa pediu um analista"), que o funcionário vê como marco e o analista lerá no histórico na Etapa 8.
+
+## Decisões do console do analista (Etapa 8)
+
+- **Três colunas da Tela 4**: fila com abas e contagem, conversa ao centro, chamados do funcionário à direita. Tudo em Server Components com `?filtro=&conversa=` na URL, em vez de estado no cliente: a URL fica compartilhável, cada ação recarrega dados frescos e só os botões precisam de JavaScript.
+- **Abas derivadas do estado da conversa**, não de campo novo: "Para você" é `aguardando_analista`, "Com o agent" é `com_agent`, "Minhas" é `com_analista` com o analista sendo quem está olhando, mais "Encerradas" e "Todas". A regra mora no domínio (`pertenceAoFiltro`), e o console só a consome.
+- **Resumo do caso em destaque** no topo da conversa, acima do histórico — é o que o Anexo A manda levar junto na transferência, e o que evita o analista perguntar tudo de novo.
+- **Cada transição deixa marca na conversa**: assumir, devolver e encerrar gravam uma mensagem de sistema com o nome do analista. O funcionário vê os mesmos marcos no chat dele, então nada acontece "por baixo do pano".
+- **Responder exige ter assumido**, verificado no caso de uso e não só na tela: o campo só libera com a conversa em `com_analista` e com este analista.
+- **A transcrição reaproveita os componentes do chat** em modo leitura. Isso exigiu tornar opcionais os callbacks de `MensagemDoAssistente` — passar função de Server para Client Component não é permitido, e o erro apareceu no teste no navegador. O ganho é o analista ver exatamente o que o funcionário viu, inclusive o "Como decidi" de cada resposta.
+- **Privacidade no painel lateral**: os chamados vêm de `listarPorSolicitante` com o id do funcionário da conversa, nunca de uma busca livre. Os chamados citados na conversa aparecem em "Desta conversa", separados dos demais.
+- **Larguras das colunas viraram tokens** (`--largura-da-fila`, `--largura-do-painel`) com utilitários próprios, em vez de valores arbitrários nas classes, seguindo a mesma regra das cores.
 
 ## Decisões de comportamento do agent
 

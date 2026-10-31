@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
-import { ROTULO_DA_PRIORIDADE, ROTULO_DO_STATUS } from "@/domain/rotulos";
-import type { Prioridade, StatusDeChamado } from "@/domain/types";
+import {
+  ROTULO_DA_PRIORIDADE,
+  ROTULO_DO_ESTADO_DA_CONVERSA,
+  ROTULO_DO_STATUS,
+} from "@/domain/rotulos";
+import type {
+  EstadoDaConversa,
+  Prioridade,
+  StatusDeChamado,
+} from "@/domain/types";
 
 export type TomDoSelo =
   "critica" | "alta" | "media" | "baixa" | "resolvido" | "primario" | "neutro";
@@ -85,4 +93,23 @@ export function SeloDePrioridade({ prioridade }: { prioridade: Prioridade }) {
 
 export function SeloDeStatus({ status }: { status: StatusDeChamado }) {
   return <Selo tom={TOM_DO_STATUS[status]}>{ROTULO_DO_STATUS[status]}</Selo>;
+}
+
+const TOM_DO_ESTADO_DA_CONVERSA: Record<EstadoDaConversa, TomDoSelo> = {
+  com_agent: "neutro",
+  aguardando_analista: "alta",
+  com_analista: "primario",
+  encerrada: "resolvido",
+};
+
+export function SeloDeEstadoDaConversa({
+  estado,
+}: {
+  estado: EstadoDaConversa;
+}) {
+  return (
+    <Selo tom={TOM_DO_ESTADO_DA_CONVERSA[estado]}>
+      {ROTULO_DO_ESTADO_DA_CONVERSA[estado]}
+    </Selo>
+  );
 }

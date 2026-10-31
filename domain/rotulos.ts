@@ -1,6 +1,7 @@
 import type { Prazo } from "./prazos";
 import type { MotivoDeTransferencia } from "./transferencia";
 import type {
+  EstadoDaConversa,
   Impacto,
   Intencao,
   Prioridade,
@@ -50,6 +51,13 @@ const UNIDADE_NO_PLURAL: Record<Prazo["unidade"], string> = {
 
 export const descreverPrazo = ({ quantidade, unidade }: Prazo) =>
   `${quantidade} ${quantidade === 1 ? UNIDADE_NO_SINGULAR[unidade] : UNIDADE_NO_PLURAL[unidade]}`;
+
+export const ROTULO_DO_ESTADO_DA_CONVERSA: Record<EstadoDaConversa, string> = {
+  com_agent: "Com o agent",
+  aguardando_analista: "Aguardando atendente",
+  com_analista: "Em atendimento",
+  encerrada: "Encerrada",
+};
 
 export const ROTULO_DA_URGENCIA: Record<Urgencia, string> = {
   trabalho_parado: "trabalho parado",

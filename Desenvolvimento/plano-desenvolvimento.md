@@ -80,9 +80,9 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Agent pausado durante atendimento humano (regra explícita do Anexo A)
 
 ## Etapa 8 — Console do analista (UI)
-- [ ] Telas 4 e 5 — **ver protótipo** para layout; comportamento esperado descrito no PRD, histórias do analista (p.1) e "O que construir" item 6 (p.2)
-- [ ] Assumir / devolver / encerrar atendimento
-- [ ] Painel lateral com chamados do funcionário (privacidade: só os do funcionário da conversa — regra do Anexo A)
+- [x] Telas 4 e 5 — **ver protótipo** para layout; comportamento esperado descrito no PRD, histórias do analista (p.1) e "O que construir" item 6 (p.2)
+- [x] Assumir / devolver / encerrar atendimento
+- [x] Painel lateral com chamados do funcionário (privacidade: só os do funcionário da conversa — regra do Anexo A)
 
 ## Etapa 9 — Qualidade das decisões
 - [ ] Conjunto de casos de avaliação (eval set) do agent. Casos já observados no teste real da Etapa 6, a incluir: "a impressora do meu andar parou" vira equipe + trabalho parado (prioridade crítica) sem perguntar; depois de "Só eu", a urgência sai como "trabalho parado" sem ninguém ter perguntado; respostas erradas anteriores no histórico fazem o modelo repetir o erro na mesma conversa — mensagens de exemplo + resultado esperado, cobrindo os critérios de **"Qualidade das decisões" e "Condução da conversa", PRD p.3 ("Como vamos avaliar")**
@@ -92,7 +92,7 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 ## Etapa 10 — Estados de carregamento/erro e polimento
 - [ ] Loading states (streaming, busca de chamados, indisponibilidade simulada)
 - [ ] Tratamento de erro visível na UI ("tentando novamente")
-- [ ] Revisão de fidelidade ao protótipo (Anexo C). Pendências já vistas: separador de data ("Hoje") entre mensagens de dias diferentes no chat
+- [ ] Revisão de fidelidade ao protótipo (Anexo C). Pendências já vistas: separador de data ("Hoje") entre mensagens de dias diferentes no chat; o chat do funcionário não atualiza sozinho quando o analista responde (só ao recarregar)
 
 ## Etapa 11 — README final
 - [ ] Como rodar

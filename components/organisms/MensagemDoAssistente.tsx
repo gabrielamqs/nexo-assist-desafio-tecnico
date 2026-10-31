@@ -8,23 +8,15 @@ import type { AcaoDoAgent, DecisaoDoAgent } from "@/domain/types";
 import { formatarHora } from "@/lib/formatacao";
 import type { MensagemNaTela } from "@/lib/mensagem-na-tela";
 import { CartaoDeChamado } from "./CartaoDeChamado";
-import { CartaoDeRascunho } from "./CartaoDeRascunho";
+import { CartaoDeRascunho, type AcoesSobreORascunho } from "./CartaoDeRascunho";
 import { DetalhesDaDecisao } from "./DetalhesDaDecisao";
 import { SelecaoDeChamado } from "./SelecaoDeChamado";
 
-export type AcoesSobreORascunho = {
-  ocupado: boolean;
-  erro: string | null;
-  aoConfirmar: () => void;
-  aoEditar: () => void;
-  aoCancelar: () => void;
-};
-
 type Props = {
   mensagem: MensagemNaTela;
-  ehAUltima: boolean;
-  aoEnviar: (texto: string) => void;
-  rascunho: AcoesSobreORascunho;
+  ehAUltima?: boolean;
+  aoEnviar?: (texto: string) => void;
+  rascunho?: AcoesSobreORascunho;
 };
 
 function Cabecalho({
@@ -71,7 +63,7 @@ function chamadosParaEscolher(decisao: DecisaoDoAgent) {
 
 export function MensagemDoAssistente({
   mensagem,
-  ehAUltima,
+  ehAUltima = false,
   aoEnviar,
   rascunho,
 }: Props) {
@@ -109,29 +101,32 @@ export function MensagemDoAssistente({
 
       <div className={BALAO}>
         {mensagem.conteudo}
-        {ehAUltima && decisao !== null && escolhas.length === 0 && (
-          <div className="mt-3 empty:hidden">
-            <OpcoesRapidas
-              opcoes={decisao.opcoesRapidas}
-              aoEscolher={aoEnviar}
-            />
-          </div>
-        )}
+        {ehAUltima &&
+          aoEnviar !== undefined &&
+          decisao !== null &&
+          escolhas.length === 0 && (
+            <div className="mt-3 empty:hidden">
+              <OpcoesRapidas
+                opcoes={decisao.opcoesRapidas}
+                aoEscolher={aoEnviar}
+              />
+            </div>
+          )}
       </div>
 
       {escolhas.length > 0 && (
         <div className="max-w-2xl">
           <SelecaoDeChamado
             chamados={escolhas}
-            ativa={ehAUltima}
-            aoEscolher={aoEnviar}
+            ativa={ehAUltima && aoEnviar !== undefined}
+            aoEscolher={aoEnviar ?? (() => undefined)}
           />
         </div>
       )}
 
       {decisao?.proposta != null && (
         <div className="max-w-2xl">
-          <CartaoDeRascunho proposta={decisao.proposta} {...rascunho} />
+          <CartaoDeRascunho proposta={decisao.proposta} acoes={rascunho} />
         </div>
       )}
 

@@ -2,8 +2,22 @@ import type {
   AutorDeMensagem,
   Conversa,
   DecisaoDoAgent,
+  EstadoDaConversa,
   Mensagem,
+  Usuario,
 } from "@/domain/types";
+
+export type ConversaNaFila = {
+  conversa: Conversa;
+  funcionario: Usuario;
+  ultimaMensagem: Mensagem | null;
+  mensagensDoFuncionario: number;
+};
+
+export type NovoEstadoDaConversa = {
+  estado: EstadoDaConversa;
+  analistaId: string | null;
+};
 
 export type NovaMensagem = Pick<
   Mensagem,
@@ -20,4 +34,9 @@ export type RepositorioDeConversas = {
   adicionarMensagem(dados: NovaMensagem): Promise<Mensagem>;
   atualizarDecisao(mensagemId: string, decisao: DecisaoDoAgent): Promise<void>;
   transferirParaAnalista(conversaId: string, resumo: string): Promise<Conversa>;
+  mudarEstado(
+    conversaId: string,
+    novoEstado: NovoEstadoDaConversa,
+  ): Promise<Conversa>;
+  listarParaAnalista(): Promise<ConversaNaFila[]>;
 };

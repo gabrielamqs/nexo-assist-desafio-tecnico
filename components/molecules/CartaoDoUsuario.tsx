@@ -1,21 +1,12 @@
 import { LogOut } from "lucide-react";
+import { Avatar } from "@/components/atoms/Avatar";
 import { Botao } from "@/components/atoms/Botao";
 import type { Usuario } from "@/domain/types";
-
-const iniciais = (nome: string) =>
-  nome
-    .split(" ")
-    .slice(0, 2)
-    .map((parte) => parte[0] ?? "")
-    .join("")
-    .toUpperCase();
 
 export function CartaoDoUsuario({ usuario }: { usuario: Usuario }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primario-suave text-xs font-semibold text-primario">
-        {iniciais(usuario.nome)}
-      </span>
+      <Avatar nome={usuario.nome} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-tinta">
           {usuario.nome}

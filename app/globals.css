@@ -21,6 +21,9 @@
   --color-borda: #e2e8f0;
   --color-borda-escura: #24324b;
 
+  --largura-da-fila: 20rem;
+  --largura-do-painel: 22rem;
+
   --color-critica: #dc2626;
   --color-alta: #ea580c;
   --color-media: #ca8a04;
@@ -32,4 +35,12 @@ body {
   background-color: var(--color-superficie-baixa);
   color: var(--color-tinta);
   -webkit-font-smoothing: antialiased;
+}
+
+@utility colunas-com-fila {
+  grid-template-columns: var(--largura-da-fila) 1fr;
+}
+
+@utility colunas-com-painel {
+  grid-template-columns: var(--largura-da-fila) 1fr var(--largura-do-painel);
 }

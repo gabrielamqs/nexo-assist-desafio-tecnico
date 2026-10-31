@@ -1,8 +1,8 @@
-import { and, count, desc, eq, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { RepositorioDeConversas } from "@/application/ports/conversas";
 import type { Conversa } from "@/domain/types";
 import type { BancoDeDados } from "@/infrastructure/db/client";
-import { conversas, mensagens } from "@/infrastructure/db/schema";
+import { conversas, mensagens, usuarios } from "@/infrastructure/db/schema";
 
 export type OpcoesDoRepositorioDeConversas = {
   banco: BancoDeDados;
@@ -118,6 +118,50 @@ export function criarRepositorioDeConversas({
         throw new Error(`Conversa ${conversaId} não encontrada.`);
       }
       return conversa;
+    },
+
+    async mudarEstado(conversaId, { estado, analistaId }) {
+      const [conversa] = await banco
+        .update(conversas)
+        .set({ estado, analistaId, atualizadaEm: agora() })
+        .where(eq(conversas.id, conversaId))
+        .returning();
+
+      if (conversa === undefined) {
+        throw new Error(`Conversa ${conversaId} não encontrada.`);
+      }
+      return conversa;
+    },
+
+    async listarParaAnalista() {
+      const linhas = await banco
+        .select({ conversa: conversas, funcionario: usuarios })
+        .from(conversas)
+        .innerJoin(usuarios, eq(conversas.funcionarioId, usuarios.id))
+        .orderBy(desc(conversas.atualizadaEm));
+
+      if (linhas.length === 0) return [];
+
+      const ids = linhas.map(({ conversa }) => conversa.id);
+      const todasAsMensagens = await banco
+        .select()
+        .from(mensagens)
+        .where(inArray(mensagens.conversaId, ids))
+        .orderBy(desc(mensagens.criadaEm), desc(ordemDeInsercao));
+
+      return linhas.map(({ conversa, funcionario }) => {
+        const daConversa = todasAsMensagens.filter(
+          (mensagem) => mensagem.conversaId === conversa.id,
+        );
+        return {
+          conversa,
+          funcionario,
+          ultimaMensagem: daConversa[0] ?? null,
+          mensagensDoFuncionario: daConversa.filter(
+            (mensagem) => mensagem.autor === "funcionario",
+          ).length,
+        };
+      });
     },
 
     async atualizarDecisao(mensagemId, decisao) {

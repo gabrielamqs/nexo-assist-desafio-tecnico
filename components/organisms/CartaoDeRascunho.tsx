@@ -8,13 +8,17 @@ import { ROTULO_DO_IMPACTO, ROTULO_DO_TIPO } from "@/domain/rotulos";
 import type { PropostaRegistrada } from "@/domain/types";
 import { formatarDataHoraCurta } from "@/lib/formatacao";
 
-type Props = {
-  proposta: PropostaRegistrada;
+export type AcoesSobreORascunho = {
   ocupado: boolean;
   erro: string | null;
   aoConfirmar: () => void;
   aoEditar: () => void;
   aoCancelar: () => void;
+};
+
+type Props = {
+  proposta: PropostaRegistrada;
+  acoes?: AcoesSobreORascunho;
 };
 
 function SeloDaSituacao({ proposta }: { proposta: PropostaRegistrada }) {
@@ -35,38 +39,39 @@ function cabecalhoDa(proposta: PropostaRegistrada) {
     : `Atualização do ${proposta.codigo}`;
 }
 
-export function CartaoDeRascunho({
-  proposta,
-  ocupado,
-  erro,
-  aoConfirmar,
-  aoEditar,
-  aoCancelar,
-}: Props) {
-  const pendente = proposta.situacao === "pendente";
+export function CartaoDeRascunho({ proposta, acoes }: Props) {
+  const pendente = proposta.situacao === "pendente" && acoes !== undefined;
 
   return (
     <Cartao
       cabecalho={cabecalhoDa(proposta)}
       selo={<SeloDaSituacao proposta={proposta} />}
       rodape={
-        pendente ? (
+        pendente && acoes !== undefined ? (
           <>
-            <Botao onClick={aoConfirmar} disabled={ocupado}>
-              {ocupado ? "Confirmando..." : "Confirmar"}
-              {!ocupado && (
+            <Botao onClick={acoes.aoConfirmar} disabled={acoes.ocupado}>
+              {acoes.ocupado ? "Confirmando..." : "Confirmar"}
+              {!acoes.ocupado && (
                 <CornerDownLeft className="h-3.5 w-3.5" aria-hidden="true" />
               )}
             </Botao>
-            <Botao variante="secundario" onClick={aoEditar} disabled={ocupado}>
+            <Botao
+              variante="secundario"
+              onClick={acoes.aoEditar}
+              disabled={acoes.ocupado}
+            >
               Editar
             </Botao>
-            <Botao variante="fantasma" onClick={aoCancelar} disabled={ocupado}>
+            <Botao
+              variante="fantasma"
+              onClick={acoes.aoCancelar}
+              disabled={acoes.ocupado}
+            >
               Cancelar
             </Botao>
-            {erro !== null && (
+            {acoes.erro !== null && (
               <p role="alert" className="w-full text-sm text-critica">
-                {erro}
+                {acoes.erro}
               </p>
             )}
           </>
