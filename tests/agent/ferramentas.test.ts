@@ -126,6 +126,18 @@ describe("foiDitoPeloFuncionario", () => {
     expect(foiDitoPeloFuncionario("  ", ["Só eu"])).toBe(false);
     expect(foiDitoPeloFuncionario(undefined, ["Só eu"])).toBe(false);
   });
+
+  it("recusa a palavra solta tirada do meio da frase", () => {
+    expect(
+      foiDitoPeloFuncionario("meu", ["A senha do meu SAP bloqueou de novo."]),
+    ).toBe(false);
+  });
+
+  it("aceita a palavra solta quando é a resposta inteira da pessoa", () => {
+    expect(foiDitoPeloFuncionario("sim", ["A impressora parou", "Sim!"])).toBe(
+      true,
+    );
+  });
 });
 
 describe("decidirAtualizacao", () => {

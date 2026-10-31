@@ -49,6 +49,7 @@ Qualquer senha é aceita para os usuários de exemplo. O login roteia conforme o
 | `npm run format:check` | Verifica a formatação sem alterar nada                                 |
 | `npm test`             | Testes com Vitest                                                      |
 | `npm run test:watch`   | Testes em modo watch                                                   |
+| `npm run eval`         | Casos de avaliação das decisões do agent, com o Gemini real            |
 | `npm run db:generate`  | Gera a migration a partir do schema                                    |
 | `npm run db:seed`      | Popula o banco com os dados de exemplo                                 |
 | `npm run conversar`    | Conversa com o agent no terminal, mostrando a decisão de cada resposta |

@@ -97,7 +97,7 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
 
 /tests
   /domain               → testes unitários das regras puras
-  /eval                 → conjunto de casos para avaliar decisões do agent
+  /eval                 → casos de avaliação das decisões do agent, rodados com o Gemini real por `npm run eval`
 ```
 
 ## Decisões do domínio (lacunas do Anexo A preenchidas na Etapa 1)
@@ -220,6 +220,24 @@ Transparência se resolve com o modificador do Tailwind sobre o token (`bg-criti
 - **A transcrição reaproveita os componentes do chat** em modo leitura. Isso exigiu tornar opcionais os callbacks de `MensagemDoAssistente` — passar função de Server para Client Component não é permitido, e o erro apareceu no teste no navegador. O ganho é o analista ver exatamente o que o funcionário viu, inclusive o "Como decidi" de cada resposta.
 - **Privacidade no painel lateral**: os chamados vêm de `listarPorSolicitante` com o id do funcionário da conversa, nunca de uma busca livre. Os chamados citados na conversa aparecem em "Desta conversa", separados dos demais.
 - **Larguras das colunas viraram tokens** (`--largura-da-fila`, `--largura-do-painel`) com utilitários próprios, em vez de valores arbitrários nas classes, seguindo a mesma regra das cores.
+
+## Decisões da avaliação de qualidade (Etapa 9)
+
+- **O eval percorre o caminho real, não só o modelo.** Cada caso passa por `responderMensagem`, com banco em memória e o servidor MCP de verdade por trás, e as verificações olham a decisão gravada — a mesma que a tela mostra. Assim o conjunto cobre a tradução das chamadas em ações, a proposta montada e a regra de transferência, não só o texto que o modelo escreveu.
+- **Fora do `npm test`.** O conjunto roda com `npm run eval` (`vitest.eval.config.mts`), porque depende do Gemini real: gasta chamadas, leva minutos e varia de uma execução para outra. O `npm test` continua determinístico e sem chave de API. O que é lógica pura do eval — as verificações — tem teste próprio dentro do `npm test`.
+- **Casos e expectativas como dados.** Cada caso é uma lista de turnos da pessoa com o que se espera da decisão: ferramenta usada, rascunho proposto, transferência, trechos da resposta. Quatro verificações valem para toda rodada (uma pergunta por vez, sem markdown, nunca dizer que já abriu o chamado, sempre explicar o que entendeu e por quê) e uma vale para o caso inteiro: nenhum chamado criado no banco, já que nada foi confirmado.
+- **Ritmo próprio por causa do plano gratuito.** O Gemini gratuito aceita 15 chamadas por minuto e cada turno gasta de 2 a 4, uma por passo do loop de ferramentas. O runner conta as chamadas feitas e espera antes do turno seguinte; sem isso a avaliação vira uma lista de erros 429 em vez de um resultado. É também por isso que a rodada inteira leva alguns minutos.
+- **Falha conhecida fica marcada no caso.** Um caso com `falhaConhecida` roda como `it.fails`: enquanto falhar, a suíte passa e o motivo aparece no nome do teste; quando passar a funcionar, a suíte reclama e o aviso sai. O eval não fica vermelho por uma limitação já medida nem esconde quando ela deixa de existir.
+
+O que a primeira rodada mudou no agent:
+
+1. **Resposta em texto puro não derruba mais a conversa.** Em um dos casos o modelo respondeu sem o JSON combinado, o Mastra levantou erro de validação e a pessoa via "o assistente não conseguiu responder". Agora o texto é aproveitado como resposta e a decisão fica sem registro — confiança 0, que pela regra já existente leva o caso a um analista. Tem teste determinístico com o modelo roteirizado.
+2. **Evidência de uma palavra não vale mais.** O modelo justificou "afeta só a pessoa" com a palavra "meu", tirada de "a senha do meu SAP bloqueou". O trecho agora precisa de pelo menos duas palavras, ou ser a resposta inteira da pessoa — assim um "Sim" continua valendo.
+3. **Prompt mais específico**: uma pergunta por mensagem, terminada em interrogação; o que não serve de evidência ("do meu andar" é lugar, "meu notebook" é dono, pedir equipamento não diz urgência); e olhar a lista inteira antes de propor chamado novo, inclusive os resolvidos que ainda podem ser reabertos.
+
+Resultado da última rodada: 13 dos 14 casos passando. A limitação que sobrou está marcada no próprio caso: em "preciso de um segundo monitor para o home office" o modelo cita a frase inteira da pessoa como prova de quem é afetado e monta o rascunho sem perguntar. A regra literal prova que as palavras existem, não que elas digam aquilo. O estrago é pequeno — requisição assim fica com prioridade baixa, o rascunho aparece na tela com "afetados: somente você" e nada é criado sem a confirmação —, mas é presunção, e agora está medida.
+
+Erro de API não conta como erro do agent: quando o modelo devolve 503 ("sobrecarregado"), o caso roda de novo do zero, com banco e histórico novos. Repetir só o turno não serviria, porque a mensagem da pessoa já está gravada quando o modelo falha. Falha de comportamento não é repetida de propósito: repetir esconderia justamente a variação que o eval existe para medir.
 
 ## Decisões de comportamento do agent
 

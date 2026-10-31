@@ -173,4 +173,24 @@ describe("assistente com o loop do Mastra", () => {
     expect(prompt).toContain("4 horas úteis");
     expect(prompt).toContain("propor_chamado");
   });
+
+  it("aproveita a resposta quando o modelo esquece o JSON, sem decisão registrada", async () => {
+    const { modelo } = criarModeloRoteirizado([
+      { tipo: "texto", partes: ["Você consegue trabalhar de outro jeito?"] },
+    ]);
+
+    const saida = await criarAssistenteNexo({ modelo, servico }).responder({
+      funcionario: ana,
+      historico: [mensagemDaAna("a impressora do meu andar parou")],
+      agora: AGORA,
+    });
+
+    expect(saida).toMatchObject({
+      resposta: "Você consegue trabalhar de outro jeito?",
+      entendimento: "",
+      intencao: "conversa",
+      confianca: 0,
+      justificativa: "",
+    });
+  });
 });

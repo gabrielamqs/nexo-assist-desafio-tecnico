@@ -10,6 +10,7 @@ import {
   ESQUEMA_DA_SAIDA,
   INSTRUCOES_DA_SAIDA,
   normalizarSaida,
+  type SaidaEstruturada,
 } from "./saida";
 import type { ServicoDeChamadosRemoto } from "./servico-remoto";
 
@@ -35,6 +36,16 @@ function paraMensagemDoModelo({ autor, conteudo }: Mensagem) {
     case "sistema":
       return { role: "system" as const, content: conteudo };
   }
+}
+
+// Sem o JSON não há decisão registrada: a confiança fica em 0, o que leva o caso a um analista.
+async function respostaSemEstrutura(
+  execucao: { text: Promise<string> },
+  erro: unknown,
+): Promise<SaidaEstruturada> {
+  const texto = (await execucao.text.catch(() => "")).trim();
+  if (texto === "") throw erro;
+  return ESQUEMA_DA_SAIDA.parse({ resposta: texto });
 }
 
 export type DependenciasDoAssistente = {
@@ -83,18 +94,25 @@ export function criarAssistenteNexo({
       });
 
       let ultimaResposta = "";
-      for await (const parcial of execucao.objectStream) {
-        if (
-          typeof parcial.resposta === "string" &&
-          parcial.resposta !== ultimaResposta
-        ) {
-          ultimaResposta = parcial.resposta;
-          acompanhamento.aoAtualizarResposta?.(ultimaResposta);
+      const anunciar = (texto: string) => {
+        if (texto === ultimaResposta) return;
+        ultimaResposta = texto;
+        acompanhamento.aoAtualizarResposta?.(texto);
+      };
+
+      let saida: SaidaEstruturada;
+      try {
+        for await (const parcial of execucao.objectStream) {
+          if (typeof parcial.resposta === "string") anunciar(parcial.resposta);
         }
+        saida = await execucao.object;
+      } catch (erro) {
+        saida = await respostaSemEstrutura(execucao, erro);
+        anunciar(saida.resposta);
       }
 
       return {
-        ...normalizarSaida(await execucao.object),
+        ...normalizarSaida(saida),
         chamadasDeFerramenta: chamadas,
       };
     },

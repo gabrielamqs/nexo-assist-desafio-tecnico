@@ -85,9 +85,9 @@ Isso garante histórico de commits incremental (critério de avaliação "commit
 - [x] Painel lateral com chamados do funcionário (privacidade: só os do funcionário da conversa — regra do Anexo A)
 
 ## Etapa 9 — Qualidade das decisões
-- [ ] Conjunto de casos de avaliação (eval set) do agent. Casos já observados no teste real da Etapa 6, a incluir: "a impressora do meu andar parou" vira equipe + trabalho parado (prioridade crítica) sem perguntar; depois de "Só eu", a urgência sai como "trabalho parado" sem ninguém ter perguntado; respostas erradas anteriores no histórico fazem o modelo repetir o erro na mesma conversa — mensagens de exemplo + resultado esperado, cobrindo os critérios de **"Qualidade das decisões" e "Condução da conversa", PRD p.3 ("Como vamos avaliar")**
-- [ ] Rodar eval como teste automatizado
-- [ ] Ajustar limiar de confiança / prompt conforme resultado
+- [x] Conjunto de casos de avaliação (eval set) do agent — `tests/eval/casos.ts`, 14 casos cobrindo os critérios de **"Qualidade das decisões" e "Condução da conversa", PRD p.3 ("Como vamos avaliar")**. Entraram os casos observados no teste real da Etapa 6: "a impressora do meu andar parou" virando prioridade sem perguntar e a urgência saindo pronta depois de "Só eu"
+- [x] Rodar eval como teste automatizado — `npm run eval`, fora do `npm test` porque depende do Gemini real (ver `stack-arquitetura.md`)
+- [x] Ajustar limiar de confiança / prompt conforme resultado
 
 ## Etapa 10 — Estados de carregamento/erro e polimento
 - [ ] Loading states (streaming, busca de chamados, indisponibilidade simulada)

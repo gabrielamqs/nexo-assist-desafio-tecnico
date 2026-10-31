@@ -37,7 +37,9 @@ export type EntradaDaPropostaDeChamado = {
 };
 
 export const ORIENTACAO_PARA_CAMPOS_FALTANDO =
-  "Pergunte à pessoa pelos campos que faltam, um por vez. Quem é afetado e a urgência só valem com um trecho do que a própria pessoa escreveu.";
+  "Pergunte à pessoa pelos campos que faltam, um por vez. Quem é afetado e a urgência só valem com um trecho em que a própria pessoa fala disso.";
+
+const PALAVRAS_MINIMAS_NA_EVIDENCIA = 2;
 
 export function foiDitoPeloFuncionario(
   evidencia: string | undefined,
@@ -45,9 +47,15 @@ export function foiDitoPeloFuncionario(
 ): boolean {
   if (evidencia === undefined) return false;
   const trecho = paraComparacao(evidencia);
+  if (trecho === "") return false;
+
+  const falas = falasDoFuncionario.map((fala) => paraComparacao(fala));
+  if (!falas.some((fala) => fala.includes(trecho))) return false;
+
+  // Uma palavra solta não diz nada sozinha; só vale se for a resposta inteira.
   return (
-    trecho !== "" &&
-    falasDoFuncionario.some((fala) => paraComparacao(fala).includes(trecho))
+    trecho.split(" ").length >= PALAVRAS_MINIMAS_NA_EVIDENCIA ||
+    falas.includes(trecho)
   );
 }
 
@@ -253,7 +261,7 @@ export function criarFerramentasDoAssistente({
         .string()
         .optional()
         .describe(
-          "Trecho copiado literalmente do que a pessoa escreveu e que diz quem é afetado, como 'Só eu' ou 'ninguém da equipe consegue'. Sem esse trecho, afetados é ignorado.",
+          "Trecho copiado literalmente de uma mensagem da pessoa em que ela diz quantas pessoas estão sem o serviço, como 'Só eu' ou 'ninguém da equipe consegue'. O lugar do problema e o dono do equipamento não dizem isso. Uma palavra solta não serve, a não ser que seja a resposta inteira dela. Sem um trecho assim, não mande afetados: pergunte.",
         ),
       urgencia: z
         .enum(URGENCIAS)
@@ -265,7 +273,7 @@ export function criarFerramentasDoAssistente({
         .string()
         .optional()
         .describe(
-          "Trecho copiado literalmente do que a pessoa escreveu e que mostra a urgência, como 'tenho reunião às 14h'. Sem esse trecho, urgencia é ignorada.",
+          "Trecho copiado literalmente de uma mensagem da pessoa em que ela diz se consegue ou não trabalhar, ou que tem compromisso hoje, como 'tenho reunião às 14h', 'uso a do outro andar' ou 'não tem pressa'. Pedir um equipamento ou relatar o problema não diz a urgência. Uma palavra solta não serve, a não ser que seja a resposta inteira dela. Sem um trecho assim, não mande urgencia: pergunte.",
         ),
     }),
     execute: async (entrada) =>

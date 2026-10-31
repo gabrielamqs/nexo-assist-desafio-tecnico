@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "eval": "vitest run --config vitest.eval.config.mts",
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
     "conversar": "tsx --env-file-if-exists=.env scripts/conversar.ts"
