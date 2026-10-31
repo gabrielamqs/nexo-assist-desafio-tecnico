@@ -3,7 +3,7 @@ import { dirname } from "node:path";
 import { createClient } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { urlDoBanco } from "@/lib/env";
+import { ambiente } from "@/lib/env";
 import * as schema from "./schema";
 
 export type BancoDeDados = LibSQLDatabase<typeof schema>;
@@ -17,7 +17,7 @@ function garantirPastaDoArquivo(url: string) {
   mkdirSync(dirname(caminho), { recursive: true });
 }
 
-export function criarBancoDeDados(url = urlDoBanco()): BancoDeDados {
+export function criarBancoDeDados(url = ambiente().DATABASE_URL): BancoDeDados {
   garantirPastaDoArquivo(url);
   return drizzle(createClient({ url }), { schema });
 }

@@ -1,6 +1,6 @@
-import { modeloDoGemini, variavelObrigatoria } from "@/lib/env";
+import { ambiente, chaveDoGemini } from "@/lib/env";
 
 export const modeloDoAssistente = () => ({
-  id: `google/${modeloDoGemini()}` as const,
-  apiKey: variavelObrigatoria("GEMINI_API_KEY"),
+  id: `google/${ambiente().GEMINI_MODEL}` as const,
+  apiKey: chaveDoGemini(),
 });

@@ -1,6 +1,6 @@
 import { criarBancoDeDados, migrar } from "@/infrastructure/db/client";
 import { semearBancoDeDados } from "@/infrastructure/db/seed";
-import { urlDoBanco } from "@/lib/env";
+import { ambiente } from "@/lib/env";
 
 async function main() {
   const banco = criarBancoDeDados();
@@ -9,8 +9,8 @@ async function main() {
 
   console.log(
     semeou
-      ? `Dados de exemplo gravados em ${urlDoBanco()}`
-      : `O banco em ${urlDoBanco()} já tem dados; nada foi alterado.`,
+      ? `Dados de exemplo gravados em ${ambiente().DATABASE_URL}`
+      : `O banco em ${ambiente().DATABASE_URL} já tem dados; nada foi alterado.`,
   );
 }
 

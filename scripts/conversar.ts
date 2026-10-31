@@ -12,10 +12,10 @@ import {
   repositorioDeConversas,
   repositorioDeUsuarios,
 } from "@/infrastructure/dependencias";
-import { urlDoServidorMcp } from "@/lib/env";
+import { ambiente } from "@/lib/env";
 
 const AJUDA = `Comandos: /confirmar, /cancelar, /sair. Qualquer outro texto vai para o agent.
-O serviço de chamados precisa estar no ar (npm run dev) em ${urlDoServidorMcp()}.`;
+O serviço de chamados precisa estar no ar (npm run dev) em ${ambiente().MCP_SERVER_URL}.`;
 
 function mostrarDecisao(mensagem: Mensagem) {
   const decisao = mensagem.decisao;

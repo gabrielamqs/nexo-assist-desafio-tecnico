@@ -1,54 +1,110 @@
-export const CAMINHO_PADRAO_DO_BANCO = "file:./data/nexo-assist.db";
+import { z } from "zod";
 
-export const TAXA_DE_FALHA_PADRAO = 0.08;
-
-export const MODELO_PADRAO_DO_GEMINI = "gemini-3.8-flash";
-
-export const URL_PADRAO_DO_SERVIDOR_MCP = "http://localhost:3000/api/mcp";
-
-export const urlDoBanco = () =>
-  process.env.DATABASE_URL ?? CAMINHO_PADRAO_DO_BANCO;
-
-const valorOuPadrao = (valor: string | undefined, padrao: string) =>
-  valor === undefined || valor.trim() === "" ? padrao : valor.trim();
-
-export const modeloDoGemini = () =>
-  valorOuPadrao(process.env.GEMINI_MODEL, MODELO_PADRAO_DO_GEMINI);
-
-export const urlDoServidorMcp = () =>
-  new URL(
-    valorOuPadrao(process.env.MCP_SERVER_URL, URL_PADRAO_DO_SERVIDOR_MCP),
+const vazioComoAusente = <T extends z.ZodType>(esquema: T) =>
+  z.preprocess(
+    (valor) =>
+      typeof valor === "string" && valor.trim() === "" ? undefined : valor,
+    esquema,
   );
 
-export function taxaDeFalhaDoServicoDeChamados(): number {
-  const configurada = Number.parseFloat(
-    process.env.TICKET_SERVICE_FAILURE_RATE ?? "",
+const OBRIGATORIAS_EM_PRODUCAO = ["SESSION_SECRET", "GEMINI_API_KEY"] as const;
+
+const esquemaDoAmbiente = z
+  .object({
+    NODE_ENV: vazioComoAusente(
+      z
+        .enum(["development", "test", "production"], {
+          error: "deve ser development, test ou production",
+        })
+        .default("development"),
+    ),
+    DATABASE_URL: vazioComoAusente(
+      z.string().trim().default("file:./data/nexo-assist.db"),
+    ),
+    SESSION_SECRET: vazioComoAusente(
+      z
+        .string()
+        .trim()
+        .min(32, { error: "precisa ter pelo menos 32 caracteres" })
+        .optional(),
+    ),
+    GEMINI_API_KEY: vazioComoAusente(z.string().trim().optional()),
+    GEMINI_MODEL: vazioComoAusente(
+      z.string().trim().default("gemini-3.8-flash"),
+    ),
+    MCP_SERVER_URL: vazioComoAusente(
+      z
+        .url({
+          protocol: /^https?$/,
+          error:
+            "deve ser uma URL completa, como http://localhost:3000/api/mcp",
+        })
+        .default("http://localhost:3000/api/mcp"),
+    ),
+    TICKET_SERVICE_FAILURE_RATE: vazioComoAusente(
+      z.coerce
+        .number({ error: "deve ser um número" })
+        .min(0, { error: "deve estar entre 0 e 1" })
+        .max(1, { error: "deve estar entre 0 e 1" })
+        .default(0.08),
+    ),
+  })
+  .superRefine((ambiente, contexto) => {
+    if (ambiente.NODE_ENV !== "production") return;
+
+    for (const nome of OBRIGATORIAS_EM_PRODUCAO) {
+      if (ambiente[nome] === undefined) {
+        contexto.addIssue({
+          code: "custom",
+          path: [nome],
+          message: "é obrigatória em produção",
+        });
+      }
+    }
+  });
+
+export type Ambiente = z.infer<typeof esquemaDoAmbiente>;
+
+export class AmbienteInvalidoError extends Error {
+  constructor(problemas: string[]) {
+    super(
+      `Variáveis de ambiente inválidas. Veja o .env.example.\n${problemas.map((problema) => `- ${problema}`).join("\n")}`,
+    );
+    this.name = "AmbienteInvalidoError";
+  }
+}
+
+export function lerAmbiente(
+  variaveis: Record<string, string | undefined> = process.env,
+): Ambiente {
+  const resultado = esquemaDoAmbiente.safeParse(variaveis);
+  if (resultado.success) return resultado.data;
+
+  throw new AmbienteInvalidoError(
+    resultado.error.issues.map(
+      (problema) => `${problema.path.join(".")}: ${problema.message}`,
+    ),
   );
-  if (Number.isNaN(configurada)) return TAXA_DE_FALHA_PADRAO;
-  return Math.min(Math.max(configurada, 0), 1);
 }
 
-const SEGREDO_DE_DESENVOLVIMENTO = "nexo-assist-apenas-para-desenvolvimento";
+let ambienteValidado: Ambiente | undefined;
 
-export function segredoDeSessao(): string {
-  const configurado = process.env.SESSION_SECRET;
-  if (configurado !== undefined && configurado.trim() !== "") {
-    return configurado;
-  }
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "SESSION_SECRET é obrigatório em produção. Veja o .env.example.",
-    );
-  }
-  return SEGREDO_DE_DESENVOLVIMENTO;
-}
+export const ambiente = (): Ambiente => (ambienteValidado ??= lerAmbiente());
 
-export function variavelObrigatoria(nome: string): string {
-  const valor = process.env[nome];
-  if (valor === undefined || valor.trim() === "") {
-    throw new Error(
-      `A variável de ambiente ${nome} não está definida. Veja o .env.example.`,
-    );
+export const emProducao = () => ambiente().NODE_ENV === "production";
+
+const SEGREDO_DE_DESENVOLVIMENTO =
+  "nexo-assist-apenas-para-desenvolvimento-local";
+
+export const segredoDeSessao = () =>
+  ambiente().SESSION_SECRET ?? SEGREDO_DE_DESENVOLVIMENTO;
+
+export function chaveDoGemini(): string {
+  const chave = ambiente().GEMINI_API_KEY;
+  if (chave === undefined) {
+    throw new AmbienteInvalidoError([
+      "GEMINI_API_KEY: é necessária para o agent responder",
+    ]);
   }
-  return valor;
+  return chave;
 }

@@ -138,6 +138,18 @@ O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como
 - **Tokens de design em `app/globals.css`** (`@theme` do Tailwind v4), com as fontes do protótipo: Newsreader nos títulos, Schibsted Grotesk no texto, ícones Lucide.
 - **Campo de e-mail controlado**: o React reseta o formulário depois de uma Server Action, o que apagava o e-mail digitado quando o login falhava.
 
+## Convenção de configuração (variáveis de ambiente)
+
+Regra: **nenhum `process.env` fora de `lib/env.ts`.** A única exceção é `NEXT_RUNTIME` no `instrumentation.ts`, que é variável do próprio Next dizendo em que runtime o código roda, não configuração do app.
+
+- **Um schema zod descreve todas as variáveis**: tipo, padrão e restrições. O resto do código lê `ambiente().X`, já tipado e validado. Nada de ler texto cru e converter em cada lugar.
+- **Valor inválido derruba, não é corrigido em silêncio.** Taxa de falha `1.5` ou `abc`, URL do MCP sem `http://`, segredo de sessão com menos de 32 caracteres: erro com o nome da variável e o problema. Antes, a taxa inválida virava o padrão sem aviso.
+- **Produção exige `SESSION_SECRET` e `GEMINI_API_KEY`.** O `instrumentation.ts` valida o ambiente na subida do servidor: configuração errada impede o app de subir, em vez de explodir no primeiro login ou na primeira mensagem. Em desenvolvimento as duas são opcionais, para o app abrir sem `.env`.
+- **Variável vazia conta como ausente**, porque o `.env.example` copiado traz `SESSION_SECRET=` sem valor.
+- **Mensagem de erro nunca contém valor**, só nome e problema. Tem teste para isso.
+- **Nenhuma variável `NEXT_PUBLIC_`**: o Next só embute no código do navegador as que têm esse prefixo, então nenhum segredo tem como ir para o cliente. Conferido no build: a chave do Gemini não aparece em nenhum arquivo gerado, nem do navegador nem do servidor, porque é lida em tempo de execução.
+- **Sem o pacote `server-only` no `lib/env.ts`**: ele quebraria os scripts (`tsx`) e os testes, que também leem o ambiente. A garantia de não vazar já vem da regra do prefixo acima.
+
 ## Convenção de estilo
 
 Regra: **nenhuma cor literal fora de `app/globals.css`**. Nada de hex, nada de cor da paleta padrão do Tailwind (`blue-600`, `slate-500`), nada de `text-white`. Só token.

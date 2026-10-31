@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import type { Papel, Usuario } from "@/domain/types";
 import { prepararBancoDeDados } from "@/infrastructure/db/client";
 import { repositorioDeUsuarios } from "@/infrastructure/dependencias";
-import { segredoDeSessao } from "./env";
+import { emProducao, segredoDeSessao } from "./env";
 import { ROTA_DE_LOGIN, rotaInicialPara } from "./rotas";
 import {
   DURACAO_DA_SESSAO_EM_DIAS,
@@ -25,7 +25,7 @@ export async function abrirSessao(usuario: Usuario, manterConectado = false) {
     {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: emProducao(),
       path: "/",
       ...(manterConectado
         ? { maxAge: DURACAO_DA_SESSAO_EM_DIAS * 24 * 60 * 60 }

@@ -1,5 +1,5 @@
 import { criarAssistenteNexo } from "@/agent/assistente";
-import { taxaDeFalhaDoServicoDeChamados, urlDoServidorMcp } from "@/lib/env";
+import { ambiente } from "@/lib/env";
 import { criarCentralDeAjuda } from "./central-de-ajuda/repositorio-sqlite";
 import { criarRepositorioDeConversas } from "./conversas/repositorio-sqlite";
 import { banco } from "./db/client";
@@ -21,7 +21,7 @@ export const repositorioDeChamados = memoizar(() =>
     criarRepositorioDeChamados({
       banco: banco(),
       verificarDisponibilidade: criarVerificacaoDeDisponibilidade(
-        taxaDeFalhaDoServicoDeChamados(),
+        ambiente().TICKET_SERVICE_FAILURE_RATE,
       ),
     }),
   ),
@@ -47,6 +47,6 @@ export const servidorMcp = memoizar(() =>
 export const assistente = memoizar(() =>
   criarAssistenteNexo({
     modelo: modeloDoAssistente(),
-    servico: criarServicoDeChamadosViaMcp(urlDoServidorMcp()),
+    servico: criarServicoDeChamadosViaMcp(new URL(ambiente().MCP_SERVER_URL)),
   }),
 );
