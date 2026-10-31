@@ -20,6 +20,8 @@ npm run dev
 
 Preencha o `.env` (ao menos `GEMINI_API_KEY` e `SESSION_SECRET`). A aplicação sobe em http://localhost:3000.
 
+O agent consome o serviço de chamados por MCP no endereço `MCP_SERVER_URL` (padrão `http://localhost:3000/api/mcp`). Se rodar em outra porta, ajuste essa variável.
+
 O banco SQLite é criado, migrado e populado com os dados de exemplo na primeira vez que a aplicação sobe — não há passo manual. Ele fica em `data/nexo-assist.db` (fora do versionamento); apagar essa pasta devolve o projeto ao estado inicial.
 
 ### Como entrar
@@ -36,16 +38,17 @@ Qualquer senha é aceita para os usuários de exemplo. O login roteia conforme o
 
 ### Scripts
 
-| Comando                | O que faz                              |
-| ---------------------- | -------------------------------------- |
-| `npm run dev`          | Servidor de desenvolvimento            |
-| `npm run build`        | Build de produção                      |
-| `npm start`            | Servidor de produção (após o build)    |
-| `npm run lint`         | ESLint                                 |
-| `npm run typecheck`    | Checagem de tipos do TypeScript        |
-| `npm run format`       | Formata o código com Prettier          |
-| `npm run format:check` | Verifica a formatação sem alterar nada |
-| `npm test`             | Testes com Vitest                      |
-| `npm run test:watch`   | Testes em modo watch                   |
-| `npm run db:generate`  | Gera a migration a partir do schema    |
-| `npm run db:seed`      | Popula o banco com os dados de exemplo |
+| Comando                | O que faz                                                              |
+| ---------------------- | ---------------------------------------------------------------------- |
+| `npm run dev`          | Servidor de desenvolvimento                                            |
+| `npm run build`        | Build de produção                                                      |
+| `npm start`            | Servidor de produção (após o build)                                    |
+| `npm run lint`         | ESLint                                                                 |
+| `npm run typecheck`    | Checagem de tipos do TypeScript                                        |
+| `npm run format`       | Formata o código com Prettier                                          |
+| `npm run format:check` | Verifica a formatação sem alterar nada                                 |
+| `npm test`             | Testes com Vitest                                                      |
+| `npm run test:watch`   | Testes em modo watch                                                   |
+| `npm run db:generate`  | Gera a migration a partir do schema                                    |
+| `npm run db:seed`      | Popula o banco com os dados de exemplo                                 |
+| `npm run conversar`    | Conversa com o agent no terminal, mostrando a decisão de cada resposta |

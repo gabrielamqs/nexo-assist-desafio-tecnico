@@ -1,3 +1,5 @@
+import type { MotivoDeTransferencia } from "./transferencia";
+
 export const TIPOS_DE_CHAMADO = ["incidente", "requisicao"] as const;
 export type TipoDeChamado = (typeof TIPOS_DE_CHAMADO)[number];
 
@@ -129,13 +131,54 @@ export type TipoDeAcaoDoAgent = (typeof TIPOS_DE_ACAO_DO_AGENT)[number];
 export type AcaoDoAgent = {
   tipo: TipoDeAcaoDoAgent;
   descricao: string;
+  sucesso: boolean;
+};
+
+export const INTENCOES = [
+  "tirar_duvida",
+  "consultar_chamado",
+  "abrir_chamado",
+  "complementar_chamado",
+  "falar_com_analista",
+  "fora_do_escopo",
+  "conversa",
+] as const;
+export type Intencao = (typeof INTENCOES)[number];
+
+export type PropostaDeChamado =
+  | {
+      tipo: "criar";
+      rascunho: RascunhoCompleto;
+      prazoDeResposta: string;
+    }
+  | {
+      tipo: "atualizar";
+      codigo: string;
+      texto: string;
+      reabrir: boolean;
+    };
+
+export type SituacaoDaProposta =
+  | { situacao: "pendente" }
+  | { situacao: "confirmada"; codigoDoChamado: string }
+  | { situacao: "cancelada" };
+
+export type PropostaRegistrada = PropostaDeChamado & SituacaoDaProposta;
+
+export type AvaliacaoDeTransferencia = {
+  recomendada: boolean;
+  motivo: MotivoDeTransferencia | null;
 };
 
 export type DecisaoDoAgent = {
   entendimento: string;
+  intencao: Intencao;
   acoes: AcaoDoAgent[];
   confianca: number;
   justificativa: string;
+  opcoesRapidas: string[];
+  proposta: PropostaRegistrada | null;
+  transferencia: AvaliacaoDeTransferencia;
 };
 
 export type Mensagem = {
@@ -158,9 +201,9 @@ export const CAMPOS_OBRIGATORIOS_DO_CHAMADO = [
 export type CampoObrigatorioDoChamado =
   (typeof CAMPOS_OBRIGATORIOS_DO_CHAMADO)[number];
 
-export type RascunhoDeChamado = Partial<
-  Pick<Chamado, CampoObrigatorioDoChamado>
->;
+export type RascunhoCompleto = Pick<Chamado, CampoObrigatorioDoChamado>;
+
+export type RascunhoDeChamado = Partial<RascunhoCompleto>;
 
 export const LIMITE_DE_MENSAGENS_POR_SESSAO = 30;
 export const MENSAGENS_PARA_AVISAR_DO_LIMITE = 25;

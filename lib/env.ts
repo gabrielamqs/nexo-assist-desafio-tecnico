@@ -2,8 +2,23 @@ export const CAMINHO_PADRAO_DO_BANCO = "file:./data/nexo-assist.db";
 
 export const TAXA_DE_FALHA_PADRAO = 0.08;
 
+export const MODELO_PADRAO_DO_GEMINI = "gemini-3.8-flash";
+
+export const URL_PADRAO_DO_SERVIDOR_MCP = "http://localhost:3000/api/mcp";
+
 export const urlDoBanco = () =>
   process.env.DATABASE_URL ?? CAMINHO_PADRAO_DO_BANCO;
+
+const valorOuPadrao = (valor: string | undefined, padrao: string) =>
+  valor === undefined || valor.trim() === "" ? padrao : valor.trim();
+
+export const modeloDoGemini = () =>
+  valorOuPadrao(process.env.GEMINI_MODEL, MODELO_PADRAO_DO_GEMINI);
+
+export const urlDoServidorMcp = () =>
+  new URL(
+    valorOuPadrao(process.env.MCP_SERVER_URL, URL_PADRAO_DO_SERVIDOR_MCP),
+  );
 
 export function taxaDeFalhaDoServicoDeChamados(): number {
   const configurada = Number.parseFloat(

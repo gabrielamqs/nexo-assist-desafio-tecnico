@@ -62,27 +62,32 @@ Fora esses três pontos, sem camadas adicionais só pelo nome.
 
 /application            → casos de uso, orquestram domain + ports
   usecases/
-    abrir-chamado.ts
-    consultar-chamados.ts
-    buscar-central-ajuda.ts
-    transferir-para-analista.ts
+    responder-mensagem.ts   (uma rodada de conversa: histórico → agent → decisão persistida)
+    confirmar-proposta.ts   (cria/atualiza o chamado só no clique de confirmação; cancelar)
+    autenticar.ts
+  acoes-do-agent.ts         (chamadas de ferramenta → ações exibidas e proposta)
   ports/
-    llm-provider.ts      (interface)
-    ticket-repository.ts (interface)
+    assistente.ts           (o agent visto pela aplicação: sem Mastra nem Gemini)
+    conversas.ts, ticket-repository.ts, central-de-ajuda.ts, usuarios.ts
 
 /infrastructure
   /db                   → schema Drizzle, migrations, client SQLite, dados-exemplo.ts (Anexo B)
-  /llm                  → adapter Gemini implementando llm-provider
-  /mcp                  → MCPServer e as ferramentas expostas ao agent
-  dependencias.ts       → composição de produção (banco → repositórios → servidor MCP)
+  /llm                  → configuração do modelo (Gemini via roteador do Mastra)
+  /conversas            → repositório SQLite de conversas e mensagens
+  /mcp                  → MCPServer (expõe o serviço) e cliente MCP (o agent consome)
+  dependencias.ts       → composição de produção (banco → repositórios → MCP → agent)
   /ticket-repo          → implementação SQLite de ticket-repository, com simulação de indisponibilidade
   /central-de-ajuda     → busca nos artigos (ranqueamento por título/palavra-chave/conteúdo)
 
-/agent                  → definição do agent Mastra, wiring de tools via MCPClient, prompts, structured output
+/agent                  → implementação do port assistente com Mastra
+  assistente.ts         (Agent por requisição, stream, saída estruturada)
+  ferramentas.ts        (ferramentas que o modelo enxerga, com o funcionário amarrado)
+  instrucoes.ts         (prompt gerado a partir das constantes do domínio)
+  saida.ts              (schema da decisão e normalização)
 
 /lib                    → utilitários compartilhados (leitura de env, sessão/auth, etc.)
 
-/scripts                → scripts de linha de comando (seed do banco)
+/scripts                → linha de comando: seed do banco e conversa com o agent no terminal
 
 /tests
   /domain               → testes unitários das regras puras
@@ -150,6 +155,20 @@ Os nomes dizem a **função**, não a cor, para que trocar a identidade visual s
 Transparência se resolve com o modificador do Tailwind sobre o token (`bg-critica/5`), nunca com uma nova cor.
 
 **Token resolve cor, não resolve combinação repetida.** Os selos de prioridade e status vão aparecer no chat, no card de chamado, na lista do analista e no painel lateral, sempre como o mesmo trio de fundo, borda e texto. Isso vira um átomo `Selo` na Etapa 6, que recebe a prioridade ou o status e decide as classes — um lugar só define como "prioridade alta" se parece.
+
+## Decisões do agent (Etapa 5)
+
+- **O LLM entende, o código decide as regras.** O modelo julga quem é afetado e se há urgência; a prioridade e o prazo saem de `definirPrioridade` e `calcularPrazo` do domínio, chamados pela ferramenta `propor_chamado`. O modelo nunca escolhe a prioridade. A mesma ferramenta usa `validarRascunho` e devolve os campos que faltam — é a regra do Anexo A que diz ao agent o que perguntar.
+- **Confirmação garantida pela estrutura, não pelo prompt.** As ferramentas do agent só *propõem* (`propor_chamado`, `propor_atualizacao`). Criar, atualizar e reabrir acontecem em `confirmarProposta`, disparado pelo clique do funcionário. O modelo não tem como pular a confirmação, por mais que erre. Por isso `criar_chamado` e `atualizar_chamado` do MCP não estão entre as ferramentas do agent.
+- **Privacidade amarrada no servidor.** As ferramentas que o modelo enxerga não têm campo de funcionário: o `funcionarioId` vem da sessão e é fechado na criação das ferramentas, a cada requisição. Tem teste injetando outro id na entrada e confirmando que é ignorado.
+- **Ações exibidas = ferramentas realmente chamadas.** Cada ferramenta registra entrada, saída e sucesso; `acoesDasFerramentas` traduz isso nos rótulos do protótipo ("consultou seus chamados", "classificou a prioridade"). O que aparece acima da resposta é o que aconteceu, não o que o modelo diz que fez — inclusive falhas ("não conseguiu consultar seus chamados").
+- **Saída estruturada com `jsonPromptInjection: "system"`** e instruções compactas no lugar do schema inteiro. A doc do Mastra avisa que o Gemini 2.5 recusa ferramentas e `response_format` juntos; a injeção no prompt funciona com qualquer versão e custa menos tokens. O schema tem `.catch()` nos campos secundários: intenção desconhecida vira `conversa`, confiança ausente vira 0 (e portanto recomenda analista). Uma resposta nunca cai por um campo fora do formato.
+- **Texto em tempo real pelo `objectStream`**: o campo `resposta` chega parcial enquanto o JSON é gerado, e o caso de uso repassa por callback. A Etapa 6 só precisa ligar isso ao stream HTTP.
+- **Prompt gerado do domínio.** Categorias, tabela de prioridades, prazos, expediente e janela de reabertura vêm das constantes de `domain/`. Mudou a regra, mudou o prompt — não há duas cópias para divergirem.
+- **Uma chamada de modelo por rodada**, com histórico limitado às últimas 20 mensagens, temperatura 0.2, no máximo 6 passos e 45 s de teto. As mensagens de confirmação e cancelamento são texto montado pelo código: zero tokens.
+- **O port `llm-provider` virou `assistente`.** Com o Mastra, trocar de provedor é trocar a configuração do modelo (`infrastructure/llm/modelo.ts`), então um port só para o provedor seria uma interface sem implementação alternativa. O port que isola de verdade é o `Assistente`: a aplicação não sabe que existe Mastra nem Gemini, e os testes dos casos de uso usam um assistente falso.
+- **Testes do loop real sem chave de API.** O Mastra traz `MastraLanguageModelV2Mock`, que aceita um stream por passo. Os testes roteirizam "chama ferramenta → chama outra → responde JSON" e exercitam o loop de verdade, com o servidor MCP real em memória por trás.
+- **Variáveis novas**: `GEMINI_MODEL` (padrão `gemini-3.8-flash`, rápido e barato) e `MCP_SERVER_URL`. A chave continua em `GEMINI_API_KEY`, passada explicitamente ao modelo em vez de depender do nome que o roteador do Mastra procura.
 
 ## Decisões de comportamento do agent
 

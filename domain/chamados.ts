@@ -4,6 +4,7 @@ import {
   PREFIXO_POR_TIPO,
   type CampoObrigatorioDoChamado,
   type Chamado,
+  type RascunhoCompleto,
   type RascunhoDeChamado,
   type TipoDeChamado,
   type Usuario,
@@ -27,6 +28,10 @@ export function validarRascunho(
     ? { valido: true }
     : { valido: false, camposFaltando };
 }
+
+export const rascunhoEstaCompleto = (
+  rascunho: RascunhoDeChamado,
+): rascunho is RascunhoCompleto => validarRascunho(rascunho).valido;
 
 export const estaEmAberto = (chamado: Chamado) =>
   chamado.status !== "resolvido";
