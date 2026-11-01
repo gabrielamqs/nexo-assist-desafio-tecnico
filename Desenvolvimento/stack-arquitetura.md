@@ -15,19 +15,36 @@ Este documento é um resumo interpretado, não a fonte original. Fontes: `../Doc
 | Frontend | Next.js (App Router) + React | Sugestão do PRD; app único (sem monorepo) |
 | Estilização | Tailwind CSS v4 | Padrão do scaffold do Next.js; utilitários casam bem com Atomic Design e com a fidelidade ao protótipo |
 | Organização de componentes | Atomic Design (atoms/molecules/organisms/templates) | Escalável sem overhead de ferramental extra |
-| ORM / banco | Drizzle + SQLite | TS-first, leve, roda bem com arquivo local e com volume persistente |
+| ORM / banco | Drizzle + libSQL/SQLite | TS-first, leve, e o mesmo driver atende arquivo local em desenvolvimento e Turso em produção |
 | Testes | Vitest | Padrão de fato em projetos TS/Next |
-| Deploy | Fly.io | Suporta volume persistente (SQLite sobrevive a restart); Vercel tem filesystem efêmero nas functions, incompatível com esse requisito. Railway era a primeira escolha, mas um incidente de segurança (ataques de criação de contas em massa) suspendeu novos cadastros na época do deploy — ver nota abaixo |
+| Deploy | Vercel + Turso | Plataforma nativa do Next.js, e o Turso (libSQL hospedado) tira o banco do disco — sem arquivo local, o app fica sem estado e serverless deixa de ser impedimento. Railway e Fly.io foram as duas escolhas anteriores, ambas barradas por limites de conta, não por técnica — ver nota abaixo |
 
-## Por que não Vercel para o deploy
+## Banco em disco vs. banco remoto: o que decidiu a plataforma
 
-Funções serverless da Vercel têm filesystem efêmero e não compartilhado entre instâncias — um arquivo SQLite local não persiste de forma confiável. Um processo Node persistente com volume de disco real resolve isso, então SQLite "puro" funciona sem troca de banco. Também evita conflito com outro projeto já hospedado no Vercel.
+O requisito que mandou na escolha de deploy não foi "processo longo", foi **onde o banco mora**.
 
-Ponto de atenção ao configurar o volume (vale para Railway e para Fly.io): o volume só existe em runtime (não em build) — a criação/migração do banco precisa acontecer no startup do app, com o caminho do arquivo apontando para o mount path absoluto do volume, não um caminho relativo. É exatamente o que `instrumentation.ts` já faz.
+Com SQLite em arquivo, o app precisa de volume persistente: funções serverless têm filesystem efêmero e não compartilhado entre instâncias, e um arquivo local não sobrevive de forma confiável. Foi esse o raciocínio que descartou a Vercel nas Etapas 1 e 2 e levou a Railway e, depois, a Fly.io. Vale como raciocínio: enquanto o banco é um arquivo, a conclusão está certa.
 
-## Railway → Fly.io: troca de plataforma em runtime
+Com o banco em **Turso** (libSQL hospedado, mesmo motor), o arquivo deixa de existir: o app passa a falar com o banco por rede, fica sem estado, e a restrição inteira cai. Serverless vira a opção natural em vez da proibida. A troca sai de graça no código porque o driver é o mesmo — ver "Decisões de infraestrutura (Etapa 2)", onde essa saída foi registrada como motivo para escolher o `@libsql/client`.
 
-A primeira escolha de deploy foi a Railway (ver tabela acima), com `railway.json` e documentação prontos na Etapa 13. Na hora de efetivamente criar a conta, a Railway tinha suspendido novos cadastros por causa de um [incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. Como o PRD lista Fly.io como alternativa igualmente válida ("Pode ser em qualquer plataforma: Vercel, Railway, Fly.io, Render ou outra"), e Fly.io atende ao mesmo requisito técnico (volume persistente, processo de vida longa), a troca foi direta: `railway.json` saiu, entrou `Dockerfile` + `fly.toml`, e o resto (derivação de `MCP_SERVER_URL` por `PORT`, `/api/saude`, limite de uso) é agnóstico de plataforma e não mudou.
+O que muda de verdade com a mudança:
+
+- **Preparo do banco deixa de ser automático quando ele é remoto.** Com arquivo local, `instrumentation.ts` migra e semeia no startup — um processo, sem corrida. Com banco remoto em serverless, instâncias frias concorrentes disputariam a mesma migration e o mesmo seed; `prepararBancoDeDados()` então não faz nada, e migrations e seed rodam uma vez por `npm run db:seed`.
+- **`MCP_SERVER_URL` passa a ser derivada de `VERCEL_URL`**, porque em serverless não há porta própria para derivar. Cada chamada de ferramenta do agent vira uma segunda invocação de função.
+- **O limite de uso em memória perde força**: ele conta por processo, e agora há vários. Continua sendo defesa contra abuso óbvio, mas o teto efetivo é mais alto que o configurado.
+- **O `Dockerfile` fica no repositório** mesmo sem ser usado pela Vercel: serve para rodar em contêiner local e mantém o caminho de volta ao SQLite em arquivo aberto, em qualquer plataforma com volume.
+
+## Railway → Fly.io → Vercel: três plataformas na Etapa 13
+
+O PRD permite qualquer plataforma ("Pode ser em qualquer plataforma: Vercel, Railway, Fly.io, Render ou outra"), e foram precisas três. Nenhuma das duas primeiras caiu por limitação técnica: as duas caíram em **limites de conta**, descobertos só na hora de publicar.
+
+**Railway**, primeira escolha, com `railway.json` e documentação prontos. Na hora de criar a conta, novos cadastros estavam suspensos por um [incidente de segurança](https://status.railway.com/incident/O1VGXWU5) — abuso em massa na criação de contas, sem previsão de retorno.
+
+**Fly.io**, segunda escolha, pelo mesmo requisito (volume persistente). `Dockerfile` multi-stage com output `standalone` e `fly.toml` foram escritos e **verificados de ponta a ponta**: build em contêiner, criação do banco no volume, `/api/saude` em 200 e persistência do arquivo após destruir e recriar o contêiner sobre o mesmo volume. O deploy real também subiu e ficou saudável (`Checks 1/1 passing`, volume montado em `/data`, 256 MB sem OOM). O que inviabilizou foi a política da conta gratuita: a Fly desliga a máquina a cada **5 minutos de execução** até se cadastrar um cartão — medido duas vezes no log (`Trial machine stopping. To run for longer than 5m0s`), por tempo ligado e não por inatividade, inclusive com a máquina recebendo requisições. A máquina volta sozinha em ~4,5 s na requisição seguinte, mas um corte no meio de uma resposta em streaming aparece como falha do app, e isso não serve para um link de demonstração.
+
+**Vercel + Turso**, terceira e definitiva. Em vez de procurar uma quarta plataforma com volume gratuito — que praticamente não existe: na Render, por exemplo, disco persistente é só para serviços pagos — a decisão foi remover o requisito que criava a busca. Ver a seção anterior.
+
+O que atravessou as três sem mudar: `/api/saude`, o limite de uso, a validação de ambiente em `lib/env.ts` e a derivação automática de `MCP_SERVER_URL` (que ganhou um caso novo, `VERCEL_URL`, sem perder o de `PORT`). O trabalho jogado fora foi só `railway.json` e `fly.toml`.
 
 ## Arquitetura interna — "Clean Architecture lite"
 
@@ -118,8 +135,8 @@ O Anexo A dá a tabela de prioridade/prazo mas não define o expediente nem como
 
 ## Decisões de infraestrutura (Etapa 2)
 
-- **Driver `@libsql/client`** em vez de `better-sqlite3`: a API é assíncrona (combina com route handlers do Next), aceita a URL no formato `file:` que já estava no `.env.example` e deixa uma saída pronta para Turso caso o volume do Railway dê problema. O Drizzle 0.45 não tem driver para o `node:sqlite` nativo, então a escolha era entre esses dois.
-- **Migrations rodam no startup**, pelo `instrumentation.ts` do Next, não no build — o volume do Railway só existe em runtime. O mesmo hook cria a pasta do arquivo (o libsql não cria) e roda o seed.
+- **Driver `@libsql/client`** em vez de `better-sqlite3`: a API é assíncrona (combina com route handlers do Next), aceita a URL no formato `file:` que já estava no `.env.example` e deixa uma saída pronta para Turso caso o volume do Railway dê problema. O Drizzle 0.45 não tem driver para o `node:sqlite` nativo, então a escolha era entre esses dois. **Essa saída foi usada na Etapa 13**: o deploy terminou no Turso, e o custo da troca foi passar um `authToken` adiante — ver a seção sobre banco em disco vs. banco remoto.
+- **Migrations rodam no startup**, pelo `instrumentation.ts` do Next, não no build — o volume da plataforma só existe em runtime. O mesmo hook cria a pasta do arquivo (o libsql não cria) e roda o seed. Isso vale para banco em arquivo; com banco remoto o startup não migra nem semeia, pela corrida entre instâncias descrita na Etapa 13.
 - **Seed idempotente**: só insere se a tabela de usuários estiver vazia. `npm run db:seed` serve para popular manualmente; em uso normal o startup já resolve.
 - **Tabela `atualizacoes_de_chamado`** em vez de concatenar texto na descrição: a história 3 do funcionário ("complementar um chamado com novas informações") fica com histórico de verdade, com autor e data, e a descrição original não se perde.
 - **Cada atualização reinicia a contagem do prazo**, conforme o Anexo A ("o prazo vale para a primeira resposta e para cada atualização").

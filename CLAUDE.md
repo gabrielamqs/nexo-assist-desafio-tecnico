@@ -39,7 +39,7 @@ Dependencies point inward: `app/` + `components/` → `application/` → `domain
 - `agent/`: the `Assistente` port implemented with Mastra. A new `Agent` is built **per request** so `funcionarioId` is closed over in the tools. `ferramentas.ts` (tools the model sees), `instrucoes.ts` (prompt generated from domain constants), `saida.ts` (structured-output zod schema with `.catch()` defaults; plain-text replies without JSON are salvaged with confidence 0, which triggers analyst transfer).
 - `infrastructure/mcp/`: the ticket service is an MCP server at `app/api/mcp/route.ts`; the agent only reaches it through the MCP client (tool names arrive prefixed, e.g. `chamados_consultar_chamados`). Composition root: `infrastructure/dependencias.ts` (memoized factories).
 - `infrastructure/ticket-repo/`: the simulated legacy system. Random unavailability is rolled **before** any write (so retry is safe), wrapped by `comTentativas` (exponential backoff).
-- Persistence: libsql/SQLite via Drizzle; migrations and seed run at startup from `instrumentation.ts` (not at build). Dev DB is `data/nexo-assist.db`.
+- Persistence: libsql/SQLite via Drizzle. Dev DB is the local file `data/nexo-assist.db`; production is Turso (`libsql://`, with `DATABASE_AUTH_TOKEN`). Migrations and seed run at startup from `instrumentation.ts` (not at build) **only for a local file** — `prepararBancoDeDados()` is a no-op on a remote DB, where `npm run db:seed` does it once, because concurrent serverless instances would race.
 
 ### Invariants that are easy to break
 

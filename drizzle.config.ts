@@ -7,5 +7,6 @@ export default defineConfig({
   out: "./infrastructure/db/migrations",
   dbCredentials: {
     url: lerAmbiente().DATABASE_URL,
+    authToken: lerAmbiente().DATABASE_AUTH_TOKEN,
   },
 });

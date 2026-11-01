@@ -199,7 +199,7 @@ Registrado para não virar "bug" em revisão futura.
 - [x] Limite de uso por pessoa em `/api/chat` (15 mensagens por minuto, `lib/limite-de-uso.ts`) — ficou
 - [x] Seção "Deploy" no README com o passo a passo da Railway
 
-Na hora de criar a conta na Railway, os cadastros estavam suspensos por um [incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. Como o PRD lista Fly.io como alternativa igualmente válida ("Pode ser em qualquer plataforma: Vercel, Railway, Fly.io, Render ou outra") e ela atende ao mesmo requisito técnico (volume persistente), a etapa foi refeita para Fly.io em vez de esperar. `railway.json` foi removido; o raciocínio da troca está em `Desenvolvimento/stack-arquitetura.md`, seção "Railway → Fly.io".
+Na hora de criar a conta na Railway, os cadastros estavam suspensos por um [incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. Como o PRD lista Fly.io como alternativa igualmente válida ("Pode ser em qualquer plataforma: Vercel, Railway, Fly.io, Render ou outra") e ela atende ao mesmo requisito técnico (volume persistente), a etapa foi refeita para Fly.io em vez de esperar. `railway.json` foi removido; o raciocínio das trocas está em `Desenvolvimento/stack-arquitetura.md`, seção "Railway → Fly.io → Vercel".
 
 ### Preparo do repositório, segunda rodada — Fly.io (feito)
 - [x] `output: "standalone"` no `next.config.ts`, para uma imagem Docker enxuta
@@ -216,10 +216,32 @@ Na hora de criar a conta na Railway, os cadastros estavam suspensos por um [inci
 
 Continua valendo, independente da plataforma: sem `GEMINI_API_KEY`/`SESSION_SECRET` em produção, o `instrumentation.ts` falha e **toda requisição devolve 500**, com o log nomeando a variável que faltou e nunca o valor. O processo não encerra — por isso o healthcheck importa: é ele que faz a plataforma reprovar o deploy.
 
-### Falta fazer (precisa da conta da Fly.io)
-- [ ] `fly auth login`
-- [ ] `fly launch --no-deploy` (ou criar o app manualmente com o nome livre, já que `nexo-assist` pode estar em uso)
-- [ ] `fly volumes create nexo_assist_data --region gru --size 1`
-- [ ] `fly secrets set GEMINI_API_KEY=... SESSION_SECRET=... DATABASE_URL=file:/data/nexo-assist.db`
-- [ ] `fly deploy`
-- [ ] Conferir `/api/saude` na URL pública e anotá-la no README
+### Segunda rodada publicada e abandonada — limite da conta gratuita da Fly.io
+
+O deploy na Fly.io **funcionou**: máquina em `gru`, volume montado em `/data`, banco criado e migrado dentro dele, `Checks 1/1 passing` com `/api/saude` devolvendo `{"estado":"ok"}`, 256 MB sem OOM. Três problemas apareceram no caminho e todos foram corrigidos — commit antigo publicado pelo assistente web da Fly (os arquivos de deploy ainda não estavam no `main`), `SESSION_SECRET` enviada vazia por expansão de variável do PowerShell em outra sessão de terminal, e app sem IP público alocado.
+
+O que inviabilizou foi política de conta, não técnica: **a conta gratuita desliga a máquina a cada 5 minutos de execução** até se cadastrar um cartão. Medido duas vezes no log (`Trial machine stopping. To run for longer than 5m0s`), por tempo ligado e **não por inatividade** — a segunda medição caiu em 5m03s com a máquina recebendo requisições. Ela volta sozinha em ~4,5 s na requisição seguinte e os dados sobrevivem no volume, mas o chat é streaming NDJSON: um corte no meio de uma resposta do agent aparece na tela como falha do app. Não serve para um link de demonstração.
+
+### Preparo do repositório, terceira rodada — Vercel + Turso (feito)
+
+Em vez de procurar uma quarta plataforma com volume gratuito (praticamente inexistente — na Render, disco persistente é só para serviço pago), tirou-se o requisito que criava a busca: **o banco saiu do disco**. Sem arquivo local o app fica sem estado, e serverless deixa de ser impedimento. O `@libsql/client`, escolhido na Etapa 2, já tinha sido escolhido pensando nessa saída.
+
+- [x] `DATABASE_AUTH_TOKEN` em `lib/env.ts`, exigida sempre que `DATABASE_URL` não for arquivo local (`libsql://`, `http(s)://`, `ws(s)://`)
+- [x] `authToken` repassado em `criarBancoDeDados()` e em `drizzle.config.ts` (que já usava `dialect: "turso"`)
+- [x] `MCP_SERVER_URL` passa a ser derivada também de `VERCEL_URL` (`https://$VERCEL_URL/api/mcp`), sem perder a derivação por `PORT` fora da Vercel
+- [x] `prepararBancoDeDados()` não migra nem semeia quando o banco é remoto — em serverless, instâncias frias concorrentes disputariam a mesma migration e o mesmo seed. Com arquivo local, o comportamento automático de sempre continua
+- [x] `maxDuration = 300` em `/api/chat`: teto do plano Hobby, que vale também para resposta em streaming
+- [x] `fly.toml` removido; `Dockerfile` e `.dockerignore` mantidos (contêiner local e caminho de volta ao SQLite em arquivo)
+- [x] 4 testes novos em `tests/lib/env.test.ts` (derivação por `VERCEL_URL`, precedência da URL informada, token obrigatório em banco remoto, token dispensável em arquivo local) — 234 testes no total
+- [x] README: seção "Deploy" reescrita para Vercel + Turso, com "O que muda em serverless"; `stack-arquitetura.md` com o raciocínio de banco em disco vs. banco remoto e o histórico das três plataformas
+- [x] `npm run typecheck`, `npm run lint`, `npm test` (234 passando) e `npm run build` verdes
+
+Verificado também que **variável definida na linha de comando vence a do `.env`** no `npm run db:seed`, o que permite semear o Turso sem tocar no banco local.
+
+### Falta fazer (precisa das contas do Turso e da Vercel)
+
+- [ ] Criar o banco no Turso e gerar o token de acesso
+- [ ] Semear uma vez: `DATABASE_URL=... DATABASE_AUTH_TOKEN=... npm run db:seed`
+- [ ] Importar o repositório na Vercel e definir `GEMINI_API_KEY`, `SESSION_SECRET`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`
+- [ ] Publicar e conferir `GET /api/saude?detalhado` → `{"estado":"ok","banco":"ok"}`
+- [ ] Testar o fluxo completo na URL pública (funcionário → analista) e anotá-la no README

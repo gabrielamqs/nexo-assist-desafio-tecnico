@@ -38,6 +38,40 @@ describe("lerAmbiente", () => {
     ).toBe("https://nexo.app/api/mcp");
   });
 
+  it("deriva a URL do MCP do domínio da Vercel, onde não há porta própria", () => {
+    expect(
+      lerAmbiente({ VERCEL_URL: "nexo-assist.vercel.app" }).MCP_SERVER_URL,
+    ).toBe("https://nexo-assist.vercel.app/api/mcp");
+  });
+
+  it("prefere a URL do MCP informada ao domínio da Vercel", () => {
+    expect(
+      lerAmbiente({
+        VERCEL_URL: "nexo-assist.vercel.app",
+        MCP_SERVER_URL: "https://outra.app/api/mcp",
+      }).MCP_SERVER_URL,
+    ).toBe("https://outra.app/api/mcp");
+  });
+
+  it("exige token quando o banco é remoto, que é o caso do Turso", () => {
+    expect(
+      mensagemDoErro({ DATABASE_URL: "libsql://nexo-assist.turso.io" }),
+    ).toMatch("DATABASE_AUTH_TOKEN: é obrigatória quando o banco é remoto");
+  });
+
+  it("aceita banco remoto com token, e não exige token de arquivo local", () => {
+    expect(
+      lerAmbiente({
+        DATABASE_URL: "libsql://nexo-assist.turso.io",
+        DATABASE_AUTH_TOKEN: "token",
+      }).DATABASE_URL,
+    ).toBe("libsql://nexo-assist.turso.io");
+
+    expect(
+      lerAmbiente({ DATABASE_URL: "file:./data/x.db" }).DATABASE_AUTH_TOKEN,
+    ).toBeUndefined();
+  });
+
   it("trata variável vazia como ausente, como vem do .env.example", () => {
     const ambiente = lerAmbiente({
       SESSION_SECRET: "",

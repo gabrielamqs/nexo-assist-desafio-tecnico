@@ -16,6 +16,8 @@ import { registrarUso } from "@/lib/limite-de-uso";
 import { paraMensagemNaTela, type EventoDoChat } from "@/lib/mensagem-na-tela";
 import { usuarioAtual } from "@/lib/sessao-servidor";
 
+export const maxDuration = 300;
+
 const MAXIMO_DE_CARACTERES = 2000;
 
 const corpoDaRequisicao = z.object({

@@ -27,7 +27,7 @@ npm run dev
 
 Preencha o `.env`: ao menos `GEMINI_API_KEY` (chave gratuita em https://aistudio.google.com/app/apikey) e, para `npm start`, `SESSION_SECRET` (por exemplo `openssl rand -base64 32`). A aplicação sobe em http://localhost:3000.
 
-O banco SQLite é criado, migrado e populado com os dados de exemplo na primeira vez que a aplicação sobe, sem passo manual. Ele fica em `data/nexo-assist.db`, fora do versionamento; apagar essa pasta devolve o projeto ao estado inicial. Conversas, chamados e o estado de cada conversa sobrevivem a um reinício.
+O banco SQLite é criado, migrado e populado com os dados de exemplo na primeira vez que a aplicação sobe, sem passo manual. Ele fica em `data/nexo-assist.db`, fora do versionamento; apagar essa pasta devolve o projeto ao estado inicial. Conversas, chamados e o estado de cada conversa sobrevivem a um reinício. Esse preparo automático vale para banco em arquivo; com banco remoto ele é um passo único e explícito, descrito em "Deploy".
 
 **O agent consome o serviço de chamados por MCP, por HTTP**, no endereço de `MCP_SERVER_URL` (padrão `http://localhost:3000/api/mcp`). Se rodar em outra porta, ajuste essa variável. Por isso o servidor precisa estar de pé para o agent responder, inclusive em `npm run conversar`.
 
@@ -40,12 +40,13 @@ Todas são lidas e validadas em um único lugar (`lib/env.ts`). Valor inválido 
 | `GEMINI_API_KEY`              | Chave do Gemini. Obrigatória em produção                                  | —                                  |
 | `GEMINI_MODEL`                | Modelo usado pelo agent                                                   | `gemini-3.5-flash-lite`            |
 | `SESSION_SECRET`              | Assina o cookie de sessão (mínimo 32 caracteres). Obrigatória em produção | segredo fixo só em desenvolvimento |
-| `DATABASE_URL`                | Banco SQLite                                                              | `file:./data/nexo-assist.db`       |
-| `MCP_SERVER_URL`              | Endereço do serviço de chamados que o agent consome                       | `http://localhost:$PORT/api/mcp`   |
+| `DATABASE_URL`                | Banco libSQL: arquivo local ou `libsql://` do Turso                       | `file:./data/nexo-assist.db`       |
+| `DATABASE_AUTH_TOKEN`         | Token do banco remoto. Obrigatório quando o banco não é um arquivo        | —                                  |
+| `MCP_SERVER_URL`              | Endereço do serviço de chamados que o agent consome                       | derivada (ver abaixo)              |
 | `PORT`                        | Porta em que o app escuta                                                 | `3000`                             |
 | `TICKET_SERVICE_FAILURE_RATE` | Chance (0 a 1) de o sistema legado simular indisponibilidade              | `0.08`                             |
 
-`MCP_SERVER_URL` é derivada de `PORT` quando não é informada, porque o agent chama o próprio processo: em produção a porta é dinâmica e um valor fixo quebraria o serviço de chamados.
+`MCP_SERVER_URL` é derivada quando não é informada, porque o agent chama o próprio app: na Vercel, de `VERCEL_URL` (`https://$VERCEL_URL/api/mcp`), onde não há porta própria; fora dela, de `PORT` (`http://localhost:$PORT/api/mcp`), onde a porta é dinâmica e um valor fixo quebraria o serviço de chamados.
 
 ### Como entrar
 
@@ -81,55 +82,59 @@ Para ver o fluxo completo: entre como Carla, que tem um chamado crítico vencido
 
 ## Deploy
 
-O app precisa de **processo longo e disco persistente** (SQLite em arquivo + um servidor MCP que o próprio app consome), então não é serverless. O repositório vem com `Dockerfile` (multi-stage, output `standalone` do Next) e `fly.toml` já configurados para a [Fly.io](https://fly.io).
+Publicado na **Vercel**, com o banco no **Turso** (libSQL hospedado — o mesmo motor do SQLite). Em desenvolvimento nada disso aparece: o banco continua sendo um arquivo local, criado e semeado no primeiro boot.
 
-> A primeira escolha de deploy era a Railway — o repositório chegou a ter um `railway.json` pronto. Na hora de criar a conta, a Railway [suspendeu novos cadastros por um incidente de segurança](https://status.railway.com/incident/O1VGXWU5) (abuso em massa na criação de contas), sem previsão de retorno. O PRD lista Fly.io como alternativa igualmente válida, e ela atende ao mesmo requisito (volume persistente), então a troca foi direta. Detalhes em `Desenvolvimento/stack-arquitetura.md`.
+> O deploy passou por três plataformas antes de assentar, e o porquê importa mais que o destino. A primeira escolha foi a Railway, pelo volume persistente; na hora de criar a conta, ela [suspendeu novos cadastros por um incidente de segurança](https://status.railway.com/incident/O1VGXWU5). A segunda foi a Fly.io, com `Dockerfile` e `fly.toml` prontos e verificados de ponta a ponta — mas a conta gratuita desliga a máquina a cada 5 minutos de execução até se cadastrar um cartão, o que inutiliza um link de demonstração. A terceira atacou a causa em vez do sintoma: o que prendia o projeto a plataformas com volume era o banco ser um arquivo em disco. Tirando o arquivo do disco, o app fica sem estado e cabe em serverless — e o driver `@libsql/client`, escolhido na Etapa 2, já tinha sido escolhido pensando nessa saída. Detalhes em `Desenvolvimento/stack-arquitetura.md`.
 
-### Fly.io, passo a passo
+O `Dockerfile` segue no repositório: serve para rodar em contêiner localmente e mantém o deploy reproduzível em qualquer plataforma com volume, caso se queira voltar para o SQLite em arquivo.
 
-Pré-requisito: [`flyctl`](https://fly.io/docs/flyctl/install/) instalado e autenticado (`fly auth login`).
+### Vercel + Turso, passo a passo
 
-1. **Criar o app** a partir do repositório:
-
-   ```bash
-   fly launch --no-deploy
-   ```
-
-   O `flyctl` detecta o `Dockerfile` e o `fly.toml` existentes e pergunta o nome do app (precisa ser único globalmente) e a região — `fly.toml` já sugere `gru` (São Paulo). Ele propõe criar um volume: aceite, ou crie manualmente no passo 2.
-
-2. **Criar o volume** (se ainda não existir), na mesma região do app:
+1. **Criar o banco** no [Turso](https://turso.tech):
 
    ```bash
-   fly volumes create nexo_assist_data --region gru --size 1
+   turso db create nexo-assist
+   turso db show nexo-assist --url      # libsql://nexo-assist-<organizacao>.turso.io
+   turso db tokens create nexo-assist   # o token de acesso
    ```
 
-   Sem o volume montado em `/data`, cada deploy começa com o banco vazio — os chamados e conversas somem.
+   Pelo painel web dá na mesma: criar o banco e gerar um token.
 
-3. **Definir os segredos** (nunca vão para `fly.toml`, que é versionado):
+2. **Criar as tabelas e os dados de exemplo**, uma única vez, da sua máquina:
 
    ```bash
-   fly secrets set GEMINI_API_KEY="sua-chave" SESSION_SECRET="$(openssl rand -base64 32)" DATABASE_URL="file:/data/nexo-assist.db"
+   DATABASE_URL="libsql://..." DATABASE_AUTH_TOKEN="..." npm run db:seed
    ```
 
-   `NODE_ENV=production` é definida automaticamente pelo builder do Next em runtime nesse Dockerfile. `PORT` já vem de `fly.toml`. `MCP_SERVER_URL` fica de fora de propósito — é derivada de `PORT`.
+   No PowerShell: `$env:DATABASE_URL="..."; $env:DATABASE_AUTH_TOKEN="..."; npm run db:seed`.
 
-4. **Publicar**:
+   Variável definida na linha de comando vence a do `.env`, então o banco local não é tocado. O script imprime a URL que usou — confira que é a do Turso. Ele aplica as migrations e só insere os dados de exemplo se o banco estiver vazio, então repetir o comando não duplica nada.
 
-   ```bash
-   fly deploy
-   ```
+3. **Importar o repositório na Vercel** e definir as variáveis do projeto:
 
-5. **Conferir**: `fly status` mostra a URL pública; `GET /api/saude` deve responder `{"estado":"ok"}`. É o healthcheck que o `fly.toml` configura — se o banco não responder, a Fly marca a máquina como não saudável e não promove o deploy.
+   | Variável              | Valor                            |
+   | --------------------- | -------------------------------- |
+   | `GEMINI_API_KEY`      | a sua chave do Gemini            |
+   | `SESSION_SECRET`      | 32 caracteres aleatórios ou mais |
+   | `DATABASE_URL`        | a URL `libsql://` do passo 1     |
+   | `DATABASE_AUTH_TOKEN` | o token do passo 1               |
 
-Migrations e seed rodam sozinhos ao subir (`instrumentation.ts`). O seed só insere quando o banco está vazio, então reiniciar não apaga nem duplica nada — testado localmente recriando o container do zero sobre o mesmo volume Docker.
+   `NODE_ENV` e `VERCEL_URL` a Vercel define sozinha. `MCP_SERVER_URL` fica de fora de propósito (ver abaixo) e `PORT` não se aplica a serverless.
 
-### O que conferir antes do primeiro deploy
+4. **Pôr as funções na mesma região do banco**, em Settings → Functions: `gru1` (São Paulo), se o banco do Turso também estiver em São Paulo. O padrão da Vercel é `iad1` (Washington), e a latência que pesa aqui é a da função até o banco, não a do navegador: todas as páginas são renderizadas no servidor, e cada requisição faz várias consultas mais a chamada do agent ao próprio `/api/mcp`. O plano Hobby permite uma região, e a mudança só vale no deploy seguinte.
 
-- `NODE_ENV=production` torna `GEMINI_API_KEY` e `SESSION_SECRET` obrigatórias. Faltando qualquer uma, o `instrumentation.ts` falha: o processo continua de pé, mas **toda requisição devolve 500** e o log nomeia a variável que faltou, nunca o valor. Como `/api/saude` também devolve 500, o healthcheck reprova e a Fly não promove o deploy.
-- **Uma instância só.** O banco é um arquivo no volume e o limite de uso é contado em memória; escalar horizontalmente exige trocar os dois. `fly.toml` já fixa 1 processo.
-- **Custo controlado**: `auto_stop_machines` + `min_machines_running = 0` em `fly.toml` colocam a máquina para dormir sem tráfego e acordam sozinhas na próxima requisição — atende ao pedido do PRD de limitar custo inesperado num diferencial opcional.
-- `TICKET_SERVICE_FAILURE_RATE` continua em `0.08` — o sistema legado vai falhar de vez em quando de propósito, porque o desafio pede tratamento de indisponibilidade. Para uma demonstração ao vivo sem sustos, defina `0` com `fly secrets set`.
-- **256 MB é a menor VM da Fly.io hoje** (`shared-cpu-1x`), e é o que `fly.toml` pede. Next.js + o servidor MCP no mesmo processo cabem nisso numa demo de baixo tráfego, mas é pouca margem. Se `fly logs` mostrar a máquina reiniciando sozinha (sinal de OOM kill), suba para 512 MB com `fly scale memory 512` — não precisa editar `fly.toml`, o comando já persiste a mudança.
+5. **Publicar.** A Vercel detecta Next.js sozinha; não há `vercel.json` e não precisa de nenhum ajuste de build.
+
+6. **Conferir**: `GET /api/saude?detalhado` deve responder `{"estado":"ok","banco":"ok"}`. Se o banco não responder, o campo `banco` vem `"sem resposta"` e o status é 503.
+
+### O que muda em serverless
+
+- **Migrations e seed não rodam no boot quando o banco é remoto.** Instâncias frias concorrentes correriam entre si para aplicar a mesma migration ou semear o mesmo banco vazio. Com banco remoto, o passo 2 acima é a única vez que isso acontece; com arquivo local o comportamento antigo continua, criando e semeando sozinho sem passo manual.
+- **O agent chama o próprio `/api/mcp` por HTTP**, e o endereço é derivado de `VERCEL_URL` quando `MCP_SERVER_URL` não é informada, porque em serverless não existe porta própria para derivar. Cada chamada de ferramenta passa a ser uma segunda invocação de função: conta para a franquia e soma latência. O acoplamento por MCP é requisito do desafio, não acidente.
+- **O limite de uso é por instância.** `lib/limite-de-uso.ts` conta em memória e serverless tem várias instâncias, então o teto efetivo é mais alto que os 15 por minuto configurados. Para valer de verdade precisaria de um contador compartilhado — ver "O que eu faria com mais tempo".
+- **`maxDuration` de 300 s no `/api/chat`**, que é o teto do plano Hobby e vale também para resposta em streaming. Uma volta do agent fica muito abaixo disso, mas o padrão da plataforma não vale arriscar num endpoint que faz streaming.
+- `GEMINI_API_KEY` e `SESSION_SECRET` são obrigatórias em produção. Faltando qualquer uma, `lib/env.ts` recusa o ambiente e **toda requisição devolve 500**, com o nome da variável no log e nunca o valor — `/api/saude` inclusive, que é justamente como se detecta isso.
+- `TICKET_SERVICE_FAILURE_RATE` continua em `0.08`: o sistema legado falha de vez em quando de propósito, porque o desafio pede tratamento de indisponibilidade. Para uma demonstração ao vivo sem sustos, defina `0` nas variáveis da Vercel.
 
 ## Visão geral da arquitetura
 
@@ -238,7 +243,7 @@ O custo dessa escolha é um modelo menor com menos julgamento. A resposta de eng
 
 - **Regras no código, modelo para entender.** Mais código e mais ferramentas, menos flexibilidade para o modelo "improvisar" uma prioridade. Em troca, a regra do Anexo A é testável e o modelo não consegue violá-la.
 - **MCP sobre HTTP para o próprio app.** A fronteira entre agent e serviço é real (protocolo, não só pasta), mas custa um salto de rede dentro do mesmo processo e exige `MCP_SERVER_URL` apontando para o próprio servidor. Aceitei porque é exatamente a separação que o PRD pede, e porque trocar o sistema legado por um real fica de graça.
-- **SQLite em arquivo.** Simples e persistente, mas exige volume persistente e uma única instância. É por isso que o deploy não é serverless (ver `stack-arquitetura.md`).
+- **SQLite/libSQL.** Simples e persistente, e o mesmo código serve arquivo local em desenvolvimento e Turso em produção, porque o driver é o mesmo. O preço é que o preparo do banco deixa de ser automático quando ele é remoto, e que o limite de uso em memória perde força com várias instâncias (ver `stack-arquitetura.md`).
 - **Atualização ao vivo por consulta a cada 5 segundos**, em vez de SSE ou WebSocket. O streaming que importa (a resposta do agent) já acontece na própria requisição; manter conexão aberta por aba só para o lado humano custaria mais do que entrega. O preço é uma latência de até 5 s quando o analista responde.
 - **A segurança (0 a 1) é autodeclarada pelo modelo**, não calibrada. Por isso é só um gatilho de último recurso: os gatilhos explícitos do Anexo A vêm antes, e o painel mostra o número ao lado do mínimo, para quem lê julgar.
 - **Retry do sistema legado é invisível.** As três tentativas com backoff terminam em cerca de 600 ms no servidor. Na tela aparece o resultado: a ação com X e o motivo, e o rascunho que libera o botão para confirmar de novo. Expor cada tentativa exigiria um canal do repositório até o stream.
@@ -254,7 +259,7 @@ O custo dessa escolha é um modelo menor com menos julgamento. A resposta de eng
 - **Tempo real de verdade** (SSE) para o lado do analista, e notificação quando uma conversa entra na fila.
 - **Editar o rascunho num formulário** com revalidação pela mesma regra de prioridade, em vez do "Editar" conversacional de hoje.
 - **Feriados** no cálculo de prazos e fuso configurável.
-- **Autenticação real** (hoje qualquer senha é aceita, como o PRD pede) e limite de uso compartilhado entre instâncias, já que o atual é por processo.
+- **Autenticação real** (hoje qualquer senha é aceita, como o PRD pede) e limite de uso compartilhado entre instâncias — o atual é por processo, o que em serverless significa um teto efetivo mais alto que o configurado.
 - **Testes de ponta a ponta** com navegador (Playwright) para o fluxo funcionário → analista → funcionário, que hoje eu só validei à mão.
 - **Presença e leitura** (contador de não lidas, ticks, "digitando…"): o protótipo mostra os três, mas não há modelo de presença nem de leitura, e inventar esses números seria mentir na tela. Ver Etapa 12.6 em `Desenvolvimento/plano-desenvolvimento.md`.
 

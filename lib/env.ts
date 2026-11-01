@@ -9,6 +9,19 @@ const vazioComoAusente = <T extends z.ZodType>(esquema: T) =>
 
 const OBRIGATORIAS_EM_PRODUCAO = ["SESSION_SECRET", "GEMINI_API_KEY"] as const;
 
+const ehUrlDeBancoRemoto = (url: string) =>
+  /^(libsql|wss?|https?):\/\//.test(url);
+
+function urlDoMcpPadrao(variaveis: {
+  VERCEL_URL?: string;
+  PORT: number;
+}): string {
+  const { VERCEL_URL, PORT } = variaveis;
+  return VERCEL_URL === undefined
+    ? `http://localhost:${PORT}/api/mcp`
+    : `https://${VERCEL_URL}/api/mcp`;
+}
+
 const esquemaDoAmbiente = z
   .object({
     NODE_ENV: vazioComoAusente(
@@ -21,6 +34,7 @@ const esquemaDoAmbiente = z
     DATABASE_URL: vazioComoAusente(
       z.string().trim().default("file:./data/nexo-assist.db"),
     ),
+    DATABASE_AUTH_TOKEN: vazioComoAusente(z.string().trim().optional()),
     SESSION_SECRET: vazioComoAusente(
       z
         .string()
@@ -49,6 +63,7 @@ const esquemaDoAmbiente = z
         })
         .optional(),
     ),
+    VERCEL_URL: vazioComoAusente(z.string().trim().optional()),
     TICKET_SERVICE_FAILURE_RATE: vazioComoAusente(
       z.coerce
         .number({ error: "deve ser um número" })
@@ -58,6 +73,17 @@ const esquemaDoAmbiente = z
     ),
   })
   .superRefine((ambiente, contexto) => {
+    if (
+      ehUrlDeBancoRemoto(ambiente.DATABASE_URL) &&
+      ambiente.DATABASE_AUTH_TOKEN === undefined
+    ) {
+      contexto.addIssue({
+        code: "custom",
+        path: ["DATABASE_AUTH_TOKEN"],
+        message: "é obrigatória quando o banco é remoto",
+      });
+    }
+
     if (ambiente.NODE_ENV !== "production") return;
 
     for (const nome of OBRIGATORIAS_EM_PRODUCAO) {
@@ -72,8 +98,7 @@ const esquemaDoAmbiente = z
   })
   .transform((ambiente) => ({
     ...ambiente,
-    MCP_SERVER_URL:
-      ambiente.MCP_SERVER_URL ?? `http://localhost:${ambiente.PORT}/api/mcp`,
+    MCP_SERVER_URL: ambiente.MCP_SERVER_URL ?? urlDoMcpPadrao(ambiente),
   }));
 
 export type Ambiente = z.infer<typeof esquemaDoAmbiente>;
@@ -105,6 +130,8 @@ let ambienteValidado: Ambiente | undefined;
 export const ambiente = (): Ambiente => (ambienteValidado ??= lerAmbiente());
 
 export const emProducao = () => ambiente().NODE_ENV === "production";
+
+export const bancoEhRemoto = () => ehUrlDeBancoRemoto(ambiente().DATABASE_URL);
 
 const SEGREDO_DE_DESENVOLVIMENTO =
   "nexo-assist-apenas-para-desenvolvimento-local";
