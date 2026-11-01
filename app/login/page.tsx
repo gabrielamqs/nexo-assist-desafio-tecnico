@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { MarcaNexoAssist } from "@/components/atoms/MarcaNexoAssist";
-import { ContasDeDemonstracao } from "@/components/molecules/ContasDeDemonstracao";
 import { FormularioDeLogin } from "@/components/organisms/FormularioDeLogin";
 import { VitrineDoAssistente } from "@/components/organisms/VitrineDoAssistente";
 import { TelaDividida } from "@/components/templates/TelaDividida";
@@ -40,8 +39,6 @@ export default async function PaginaDeLogin() {
           </div>
 
           <FormularioDeLogin emailSugerido={EMAIL_SUGERIDO} />
-
-          <ContasDeDemonstracao />
         </div>
       </div>
 

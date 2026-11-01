@@ -2,7 +2,19 @@
 
 Agent de atendimento do service desk de TI da Nexo. O funcionário descreve o problema num chat, e o agent consulta os chamados dele, busca na central de ajuda, prepara a abertura ou a atualização de chamados e passa a conversa para um analista quando precisa. O analista tem um console próprio para assumir, responder, devolver ao agent e encerrar.
 
+> ### No ar em [nexo-assist-desafio-tecnico.vercel.app](https://nexo-assist-desafio-tecnico.vercel.app)
+>
+> **Qualquer senha é aceita** — o PRD pede que seja assim para os usuários de exemplo. O que muda é o e-mail, porque o papel decide a tela:
+>
+> | Para ver              | Entre como                |
+> | --------------------- | ------------------------- |
+> | O chat do funcionário | `ana.souza@nexo.com.br`   |
+> | O console do analista | `rafael.lima@nexo.com.br` |
+>
+> Os cinco usuários de exemplo e um roteiro de teste do fluxo completo estão em [Como entrar](#como-entrar).
+
 - [Como rodar](#como-rodar)
+- [Como entrar](#como-entrar)
 - [Visão geral da arquitetura](#visão-geral-da-arquitetura)
 - [Como o agent decide o que fazer](#como-o-agent-decide-o-que-fazer)
 - [Como a qualidade das decisões foi garantida](#como-a-qualidade-das-decisões-foi-garantida)
