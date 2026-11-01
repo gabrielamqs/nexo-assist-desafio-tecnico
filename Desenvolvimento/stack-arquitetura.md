@@ -288,6 +288,8 @@ Preservar: layout de login dividido (marketing + formulário), sidebar fina de n
 
 Liberdade: paleta exata, tipografia, ícones, microcopy, telas extras.
 
+Desvio consciente (Etapa 13): a tela de login ganhou um bloco **Contas de demonstração** que o protótipo não tem, listando uma conta de funcionária e a de analista. Sem ele, quem abre só a URL publicada entra como funcionária pelo e-mail sugerido no campo e nunca descobre `rafael.lima@nexo.com.br` — o console do analista, a fila e a transferência ficariam invisíveis, e são metade do desafio. Descoberta da demonstração pesou mais que fidelidade nesse ponto; o bloco é discreto e identificado como demonstração, para não se confundir com a interface do produto.
+
 ## Dados de exemplo (Anexo B)
 
 Pendente de criação: funcionários, 5-10 artigos de central de ajuda, chamados cobrindo os 4 estados exigidos (aberto, vencido, resolvido recente, de outro funcionário). Ver etapa correspondente em `plano-desenvolvimento.md`.
