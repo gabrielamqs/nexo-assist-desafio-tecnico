@@ -288,7 +288,9 @@ Preservar: layout de login dividido (marketing + formulário), sidebar fina de n
 
 Liberdade: paleta exata, tipografia, ícones, microcopy, telas extras.
 
-Desvio consciente (Etapa 13): a tela de login ganhou um bloco **Contas de demonstração** que o protótipo não tem, listando uma conta de funcionária e a de analista. Sem ele, quem abre só a URL publicada entra como funcionária pelo e-mail sugerido no campo e nunca descobre `rafael.lima@nexo.com.br` — o console do analista, a fila e a transferência ficariam invisíveis, e são metade do desafio. Descoberta da demonstração pesou mais que fidelidade nesse ponto; o bloco é discreto e identificado como demonstração, para não se confundir com a interface do produto.
+Desvio consciente (Etapa 13): a tela de login ganhou um bloco **Contas de demonstração** que o protótipo não tem, listando uma conta de funcionária e a de analista. Sem ele, quem abre só a URL publicada entra como funcionária pelo e-mail sugerido no campo e nunca descobre `rafael.lima@nexo.com.br` — o console do analista, a fila e a transferência ficariam invisíveis, e são metade do desafio. Descoberta da demonstração pesou mais que fidelidade nesse ponto; o bloco é discreto e identificado como demonstração, para não se confundir com a interface do produto. "Esqueci minha senha" voltou ao lugar que o protótipo lhe dá (ao lado do rótulo da senha, como `$primary-text` peso 500); ele é apresentação, não há fluxo de redefinição — a tela já oferece o ramal 4000 para quem não consegue entrar, como no protótipo.
+
+A tela de perfil também foi alinhada ao protótipo na Etapa 13: só as três linhas que ele mostra (Nome, E-mail corporativo, Senha — **Departamento saiu**, não existe no frame), com "Alterada há 42 dias" e "Enviaremos um link de redefinição para ‹e-mail›." no lugar dos textos que explicavam a demonstração. Os dois são **valores de vitrine**: não há campo de data de troca de senha no schema e nenhum e-mail é enviado — vieram do protótipo por decisão de fidelidade, e o nome da constante `SENHA_ALTERADA_HA_DO_PROTOTIPO` registra isso no código.
 
 ## Dados de exemplo (Anexo B)
 

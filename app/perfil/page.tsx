@@ -5,6 +5,8 @@ import { exigirUsuario } from "@/lib/sessao-servidor";
 
 export const instant = false;
 
+const SENHA_ALTERADA_HA_DO_PROTOTIPO = "Alterada há 42 dias";
+
 export default async function PaginaDoPerfil() {
   const funcionario = await exigirUsuario("funcionario");
 
@@ -26,14 +28,6 @@ export default async function PaginaDoPerfil() {
               <dt className="w-40 shrink-0 text-sm text-tinta-fraca">Nome</dt>
               <dd className="flex-1 text-sm font-medium text-tinta">
                 {funcionario.nome}
-              </dd>
-            </div>
-            <div className="flex items-center gap-4 border-b border-borda px-6 py-5">
-              <dt className="w-40 shrink-0 text-sm text-tinta-fraca">
-                Departamento
-              </dt>
-              <dd className="flex-1 text-sm font-medium text-tinta">
-                {funcionario.departamento}
               </dd>
             </div>
             <div className="flex flex-wrap items-center gap-4 px-6 py-5">
@@ -61,7 +55,7 @@ export default async function PaginaDoPerfil() {
               <div className="min-w-0 flex-1">
                 <h2 className="text-sm font-semibold text-tinta">Senha</h2>
                 <p className="text-sm text-tinta-fraca">
-                  Gerenciada pela TI da Nexo, junto com a senha da rede.
+                  {SENHA_ALTERADA_HA_DO_PROTOTIPO}
                 </p>
               </div>
               <Botao variante="secundario" disabled>
@@ -71,8 +65,7 @@ export default async function PaginaDoPerfil() {
             </div>
             <p className="flex items-center gap-2 border-t border-borda bg-superficie-baixa px-6 py-3 text-xs text-tinta-fraca">
               <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              Nesta demonstração a redefinição de senha não está habilitada:
-              qualquer senha é aceita no login.
+              Enviaremos um link de redefinição para {funcionario.email}.
             </p>
           </section>
         </div>

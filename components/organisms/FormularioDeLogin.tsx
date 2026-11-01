@@ -40,8 +40,8 @@ export function FormularioDeLogin({
         id="senha"
         rotulo="Senha"
         acao={
-          <span className="text-sm text-tinta-fraca">
-            Qualquer senha é aceita nesta demonstração
+          <span className="text-sm font-medium text-primario-texto">
+            Esqueci minha senha
           </span>
         }
       >
